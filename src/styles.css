@@ -152,5 +152,65 @@
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
+    background-image:
+      radial-gradient(circle at 50% 30%, oklch(0.3 0.06 25 / 0.25), transparent 55%),
+      radial-gradient(circle at 15% 85%, oklch(0.35 0.08 240 / 0.18), transparent 50%),
+      linear-gradient(oklch(1 0 0 / 0.02) 1px, transparent 1px),
+      linear-gradient(90deg, oklch(1 0 0 / 0.02) 1px, transparent 1px);
+    background-size: auto, auto, 42px 42px, 42px 42px;
   }
 }
+
+/* ---------- E.V. mask ---------- */
+.ev-mask-wrap {
+  width: min(58vw, 340px);
+  filter: drop-shadow(var(--ev-red-glow));
+  animation: ev-breathe 6s ease-in-out infinite;
+}
+.ev-mask-wrap[data-speaking="true"] {
+  animation: ev-breathe 2.4s ease-in-out infinite;
+}
+.ev-mask-wrap[data-listening="true"] {
+  filter: drop-shadow(var(--ev-glow));
+}
+.ev-mask {
+  width: 100%;
+  height: auto;
+}
+.ev-lens-path {
+  opacity: 0;
+  transition:
+    opacity 380ms cubic-bezier(0.4, 0, 0.2, 1),
+    transform 380ms cubic-bezier(0.4, 0, 0.2, 1);
+  transform-origin: 155px 120px;
+  transform: scale(0.96);
+}
+.ev-lens-path[data-active="true"] {
+  opacity: 1;
+  transform: scale(1);
+}
+.ev-lenses {
+  transform-origin: 300px 120px;
+  transition: transform 140ms ease-in-out;
+}
+.ev-lenses[data-blink="true"] {
+  transform: scaleY(0.06);
+}
+
+@keyframes ev-breathe {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    transform: translateY(-6px) scale(1.012);
+  }
+}
+
+@utility terminal-panel {
+  font-family: var(--font-terminal);
+  background: color-mix(in oklab, var(--card) 82%, transparent);
+  border: 1px solid var(--border);
+  backdrop-filter: blur(10px);
+}
+
