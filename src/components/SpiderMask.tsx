@@ -74,15 +74,18 @@ export function SpiderMask({
         </defs>
 
         {/* head */}
+        <clipPath id="headClip">
+          <path d="M300 24 C154 24 60 132 60 278 C60 436 170 580 300 606 C430 580 540 436 540 278 C540 132 446 24 300 24 Z" />
+        </clipPath>
         <path
-          d="M300 20 C170 20 78 118 78 268 C78 420 176 570 300 600 C424 570 522 420 522 268 C522 118 430 20 300 20 Z"
+          d="M300 24 C154 24 60 132 60 278 C60 436 170 580 300 606 C430 580 540 436 540 278 C540 132 446 24 300 24 Z"
           fill="url(#maskFill)"
           stroke="var(--web-line)"
           strokeWidth="3"
         />
 
         {/* web: radial spokes */}
-        <g stroke="var(--web-line)" strokeWidth="1.6" fill="none" opacity="0.55">
+        <g stroke="var(--web-line)" strokeWidth="1.6" fill="none" opacity="0.55" clipPath="url(#headClip)">
           {Array.from({ length: 16 }).map((_, i) => {
             const a = (Math.PI * 2 * i) / 16;
             return (
