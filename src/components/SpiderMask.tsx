@@ -104,7 +104,7 @@ export function SpiderMask({
         </g>
 
         {/* lenses */}
-        <g className="ev-lenses" data-blink={blink} filter="url(#lensGlow)" transform="translate(300,265) scale(1.22) translate(-300,-265)">
+        <g className="ev-lenses" data-blink={blink} filter="url(#lensGlow)" transform="translate(0,58)">
           <g className="ev-lens ev-lens-left">
             {ORDER.map((k) => (
               <path
