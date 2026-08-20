@@ -75,10 +75,10 @@ export function SpiderMask({
 
         {/* head */}
         <clipPath id="headClip">
-          <path d="M300 24 C154 24 60 132 60 278 C60 436 170 580 300 606 C430 580 540 436 540 278 C540 132 446 24 300 24 Z" />
+          <path d="M300 36 C160 36 74 148 74 288 C74 404 140 524 242 582 C272 599 328 599 358 582 C460 524 526 404 526 288 C526 148 440 36 300 36 Z" />
         </clipPath>
         <path
-          d="M300 24 C154 24 60 132 60 278 C60 436 170 580 300 606 C430 580 540 436 540 278 C540 132 446 24 300 24 Z"
+          d="M300 36 C160 36 74 148 74 288 C74 404 140 524 242 582 C272 599 328 599 358 582 C460 524 526 404 526 288 C526 148 440 36 300 36 Z"
           fill="url(#maskFill)"
           stroke="var(--web-line)"
           strokeWidth="3"
@@ -104,7 +104,7 @@ export function SpiderMask({
         </g>
 
         {/* lenses */}
-        <g className="ev-lenses" data-blink={blink} filter="url(#lensGlow)">
+        <g className="ev-lenses" data-blink={blink} filter="url(#lensGlow)" transform="translate(300,265) scale(1.22) translate(-300,-265)">
           <g className="ev-lens ev-lens-left">
             {ORDER.map((k) => (
               <path
