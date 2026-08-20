@@ -8,9 +8,12 @@ export type Expression =
 
 // Left lens outlines for each emotional state (right lens is mirrored).
 const LENS: Record<Exclude<Expression, "olhos_piscando">, string> = {
-  olhos_normais: "M96 96 C130 66 186 62 214 84 C226 94 224 118 204 140 C176 170 124 176 100 152 C84 136 84 108 96 96 Z",
-  olhos_semicerrados: "M96 116 C132 96 190 92 216 106 C226 112 222 130 202 140 C172 154 122 156 102 142 C90 134 88 122 96 116 Z",
-  olhos_arregalados: "M84 88 C122 50 194 46 222 76 C238 92 234 126 208 152 C176 184 114 190 88 162 C68 140 70 104 84 88 Z",
+  olhos_normais:
+    "M110 212 C162 176 252 174 280 208 C294 226 282 264 246 294 C204 328 136 324 114 290 C98 266 98 228 110 212 Z",
+  olhos_semicerrados:
+    "M114 240 C168 214 256 212 280 236 C292 248 280 274 246 290 C204 310 136 306 116 286 C104 274 106 248 114 240 Z",
+  olhos_arregalados:
+    "M96 190 C156 148 264 146 294 188 C312 214 296 264 252 302 C202 344 122 340 98 300 C80 270 84 208 96 190 Z",
 };
 
 const ORDER: Array<Exclude<Expression, "olhos_piscando">> = [
