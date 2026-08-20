@@ -233,7 +233,7 @@ function EvHome() {
       </footer>
 
       {showHistory && (
-        <aside className="terminal-panel fixed right-0 top-0 z-20 h-full w-full max-w-sm overflow-y-auto p-4 text-xs animate-slide-in-right">
+        <aside className="terminal-panel fixed right-0 top-0 z-20 h-full w-full max-w-sm animate-in slide-in-from-right overflow-y-auto p-4 text-xs">
           <div className="mb-3 flex items-center justify-between text-muted-foreground">
             <span>~/ev/logs</span>
             <button onClick={() => setShowHistory(false)} aria-label="Fechar histórico">
