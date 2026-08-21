@@ -54,7 +54,11 @@ export async function speakStream(text: string, onDone?: () => void): Promise<vo
     body: JSON.stringify({ text }),
     signal: controller.signal,
   });
-  if (!res.ok || !res.body) throw new Error(`TTS ${res.status}`);
+  if (!res.ok || !res.body) {
+    // Fallback: local browser voice (used when cloud TTS is unavailable).
+    fallbackSpeak(text, onDone);
+    return;
+  }
 
   const reader = res.body.pipeThrough(new TextDecoderStream()).getReader();
   let buf = "";
