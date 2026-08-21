@@ -8,6 +8,7 @@ function getCtx() {
 
 export function stopSpeech() {
   currentAbort?.abort();
+  if (typeof window !== "undefined") window.speechSynthesis?.cancel();
   currentAbort = null;
   if (ctx) {
     void ctx.close().catch(() => undefined);
@@ -93,4 +94,19 @@ export async function speakStream(text: string, onDone?: () => void): Promise<vo
     if (currentAbort === controller) currentAbort = null;
     onDone?.();
   }, wait);
+}
+
+function fallbackSpeak(text: string, onDone?: () => void) {
+  if (typeof window === "undefined" || !window.speechSynthesis) {
+    onDone?.();
+    return;
+  }
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = "pt-BR";
+  u.rate = 1.05;
+  u.pitch = 1.15;
+  u.onend = () => onDone?.();
+  u.onerror = () => onDone?.();
+  window.speechSynthesis.cancel();
+  window.speechSynthesis.speak(u);
 }
