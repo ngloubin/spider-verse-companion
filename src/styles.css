@@ -99,14 +99,16 @@
   --sidebar-ring: oklch(0.52 0.18 25);
 
   /* E.V. mask tokens */
-  --mask-red-hi: oklch(0.42 0.15 25);
-  --mask-red-lo: oklch(0.24 0.09 22);
-  --web-line: oklch(0.16 0.03 25);
-  --lens-hi: oklch(0.99 0.01 220);
-  --lens-lo: oklch(0.82 0.04 230);
-  --lens-edge: oklch(0.2 0.05 25);
-  --ev-glow: 0 0 40px oklch(0.62 0.13 235 / 0.35);
-  --ev-red-glow: 0 0 60px oklch(0.52 0.18 25 / 0.35);
+  --mask-red-hi: oklch(0.58 0.19 27);
+  --mask-red-mid: oklch(0.44 0.17 26);
+  --mask-red-lo: oklch(0.26 0.11 24);
+  --web-line: oklch(0.1 0.02 25 / 0.9);
+  --lens-hi: oklch(0.99 0.005 230);
+  --lens-mid: oklch(0.93 0.02 235);
+  --lens-lo: oklch(0.78 0.05 240);
+  --lens-edge: oklch(0.09 0.02 25);
+  --ev-glow: 0 0 44px oklch(0.62 0.13 235 / 0.4);
+  --ev-red-glow: 0 0 70px oklch(0.5 0.19 26 / 0.45);
   --font-terminal: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
@@ -155,22 +157,27 @@
     background-color: var(--color-background);
     color: var(--color-foreground);
     background-image:
-      radial-gradient(circle at 50% 30%, oklch(0.3 0.06 25 / 0.25), transparent 55%),
-      radial-gradient(circle at 15% 85%, oklch(0.35 0.08 240 / 0.18), transparent 50%),
-      linear-gradient(oklch(1 0 0 / 0.02) 1px, transparent 1px),
-      linear-gradient(90deg, oklch(1 0 0 / 0.02) 1px, transparent 1px);
-    background-size: auto, auto, 42px 42px, 42px 42px;
+      radial-gradient(circle at 50% 22%, oklch(0.4 0.12 26 / 0.22), transparent 58%),
+      radial-gradient(circle at 12% 88%, oklch(0.35 0.09 240 / 0.16), transparent 52%),
+      linear-gradient(oklch(1 0 0 / 0.018) 1px, transparent 1px),
+      linear-gradient(90deg, oklch(1 0 0 / 0.018) 1px, transparent 1px);
+    background-size: auto, auto, 48px 48px, 48px 48px;
+    background-attachment: fixed;
   }
 }
 
 /* ---------- E.V. mask ---------- */
 .ev-mask-wrap {
-  width: min(72vw, 400px);
+  width: min(76vw, 380px);
   filter: drop-shadow(var(--ev-red-glow));
-  animation: ev-breathe 6s ease-in-out infinite;
+  animation: ev-breathe 6.5s ease-in-out infinite;
+  will-change: transform;
+}
+.ev-mask-wrap[data-thinking="true"] {
+  animation: ev-breathe 2.6s ease-in-out infinite;
 }
 .ev-mask-wrap[data-speaking="true"] {
-  animation: ev-breathe 2.4s ease-in-out infinite;
+  animation: ev-talk 620ms ease-in-out infinite;
 }
 .ev-mask-wrap[data-listening="true"] {
   filter: drop-shadow(var(--ev-glow));
@@ -178,25 +185,24 @@
 .ev-mask {
   width: 100%;
   height: auto;
+  overflow: visible;
+}
+.ev-web {
+  opacity: 0.85;
 }
 .ev-lens-path {
   opacity: 0;
-  transition:
-    opacity 380ms cubic-bezier(0.4, 0, 0.2, 1),
-    transform 380ms cubic-bezier(0.4, 0, 0.2, 1);
-  transform-origin: 195px 310px;
-  transform: scale(0.96);
+  transition: opacity 320ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 .ev-lens-path[data-active="true"] {
   opacity: 1;
-  transform: scale(1);
 }
 .ev-lenses {
-  transform-origin: 300px 315px;
-  transition: transform 140ms ease-in-out;
+  transform-origin: 300px 290px;
+  transition: transform 120ms ease-in-out;
 }
 .ev-lenses[data-blink="true"] {
-  transform: scaleY(0.06);
+  transform: scaleY(0.05);
 }
 
 @keyframes ev-breathe {
@@ -205,14 +211,53 @@
     transform: translateY(0) scale(1);
   }
   50% {
-    transform: translateY(-6px) scale(1.012);
+    transform: translateY(-8px) scale(1.014);
   }
 }
 
+@keyframes ev-talk {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    transform: translateY(-3px) scale(1.022);
+  }
+}
+
+/* ---------- surfaces ---------- */
 @utility terminal-panel {
   font-family: var(--font-terminal);
-  background: color-mix(in oklab, var(--card) 82%, transparent);
-  border: 1px solid var(--border);
-  backdrop-filter: blur(10px);
+  background: color-mix(in oklab, var(--card) 78%, transparent);
+  border: 1px solid color-mix(in oklab, var(--border) 90%, transparent);
+  backdrop-filter: blur(14px);
+  box-shadow:
+    inset 0 1px 0 oklch(1 0 0 / 0.05),
+    0 20px 50px -30px oklch(0 0 0 / 0.9);
+}
+
+@utility ev-wordmark {
+  font-family: var(--font-terminal);
+  letter-spacing: 0.5em;
+  text-shadow: 0 0 24px oklch(0.52 0.18 25 / 0.55);
+}
+
+/* voice orb */
+.ev-orb {
+  width: 14px;
+  border-radius: 999px;
+  background: linear-gradient(var(--color-accent), var(--color-primary));
+  animation: ev-bar 900ms ease-in-out infinite;
+}
+@keyframes ev-bar {
+  0%,
+  100% {
+    height: 10px;
+    opacity: 0.5;
+  }
+  50% {
+    height: 42px;
+    opacity: 1;
+  }
 }
 
