@@ -1,10 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Mic, MicOff, Send, Terminal, Volume2, VolumeX, X } from "lucide-react";
+import { AudioLines, Mic, Send, Terminal, Volume2, VolumeX, X } from "lucide-react";
 
 import { SpiderMask, type Expression } from "@/components/SpiderMask";
 import { evHistory, evSend } from "@/lib/ev.functions";
+import { speakStream, stopSpeech } from "@/lib/tts";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -13,7 +14,7 @@ export const Route = createFileRoute("/")({
       {
         name: "description",
         content:
-          "E.V. (Eevee): interface residencial com máscara expressiva, conversa por voz e memória contínua para não te deixar sozinho.",
+          "E.V. (Eevee): interface residencial com máscara expressiva, conversa por voz em tempo real e memória contínua para não te deixar sozinho.",
       },
       { property: "og:title", content: "E.V. — Sua IA companheira de laboratório" },
       {
@@ -56,30 +57,41 @@ function EvHome() {
   const [expression, setExpression] = useState<Expression>("olhos_normais");
   const [reply, setReply] = useState("Oi. Tava aqui só ouvindo o cooler girar... fala comigo.");
   const [showHistory, setShowHistory] = useState(false);
-  const [voiceOut, setVoiceOut] = useState(false);
+  const [voiceOut, setVoiceOut] = useState(true);
+  const [speaking, setSpeaking] = useState(false);
   const [listening, setListening] = useState(false);
-  const [wakeArmed, setWakeArmed] = useState(false);
+  const [voiceMode, setVoiceMode] = useState(false);
+  const [heard, setHeard] = useState("");
   const [voiceHint, setVoiceHint] = useState<string | null>(null);
   const recRef = useRef<any>(null);
+  const voiceModeRef = useRef(false);
+  const speakingRef = useRef(false);
+
+  useEffect(() => {
+    voiceModeRef.current = voiceMode;
+  }, [voiceMode]);
 
   useEffect(() => {
     if (!deviceId) return;
     loadHistory({ data: { deviceId } })
-      .then((res) => {
-        setLines(res.messages.map((m: any) => ({ role: m.role, content: m.content })));
-      })
+      .then((res) => setLines(res.messages.map((m: any) => ({ role: m.role, content: m.content }))))
       .catch(() => undefined);
   }, [deviceId, loadHistory]);
 
   const speak = useCallback(
-    (text: string) => {
-      if (!voiceOut || typeof window === "undefined" || !window.speechSynthesis) return;
-      const u = new SpeechSynthesisUtterance(text);
-      u.lang = "pt-BR";
-      u.rate = 1.05;
-      u.pitch = 1.15;
-      window.speechSynthesis.cancel();
-      window.speechSynthesis.speak(u);
+    async (text: string) => {
+      if (!voiceOut) return;
+      try {
+        setSpeaking(true);
+        speakingRef.current = true;
+        await speakStream(text, () => {
+          setSpeaking(false);
+          speakingRef.current = false;
+        });
+      } catch {
+        setSpeaking(false);
+        speakingRef.current = false;
+      }
     },
     [voiceOut],
   );
@@ -89,6 +101,9 @@ function EvHome() {
       const clean = text.trim();
       if (!clean || !deviceId || busy) return;
       setInput("");
+      setHeard("");
+      stopSpeech();
+      setSpeaking(false);
       setLines((l) => [...l, { role: "user", content: clean }]);
       setBusy(true);
       setExpression("olhos_semicerrados");
@@ -100,7 +115,7 @@ function EvHome() {
         setExpression(res.expression as Expression);
         setReply(res.text);
         setLines((l) => [...l, { role: "assistant", content: res.text }]);
-        speak(res.text);
+        void speak(res.text);
       } catch {
         setExpression("olhos_semicerrados");
         setReply("Deu ruído na linha. Tenta de novo?");
@@ -111,86 +126,132 @@ function EvHome() {
     [busy, deviceId, send, speak],
   );
 
-  // Wake word + voice mode
-  const startRecognition = useCallback(() => {
-    const SR =
-      (window as any).SpeechRecognition ?? (window as any).webkitSpeechRecognition;
-    if (!SR) {
-      setVoiceHint("Seu navegador não suporta reconhecimento de voz.");
-      return;
-    }
-    const rec = new SR();
-    rec.lang = "pt-BR";
-    rec.continuous = true;
-    rec.interimResults = false;
-
-    rec.onresult = (e: any) => {
-      const transcript = String(e.results[e.results.length - 1][0].transcript).trim();
-      const lower = transcript.toLowerCase();
-      const hit = WAKE_WORDS.find((w) => lower.includes(w));
-      if (hit) {
-        const after = lower.slice(lower.indexOf(hit) + hit.length).trim();
-        setListening(true);
-        setVoiceHint("Modo de voz ativo");
-        if (after.length > 1) void submit(after);
+  const startRecognition = useCallback(
+    (immediate: boolean) => {
+      const SR = (window as any).SpeechRecognition ?? (window as any).webkitSpeechRecognition;
+      if (!SR) {
+        setVoiceHint("Seu navegador não suporta reconhecimento de voz.");
         return;
       }
-      if (listening && transcript.length > 1) void submit(transcript);
-    };
-    rec.onerror = () => setVoiceHint("Não consegui ouvir. Verifique o microfone.");
-    rec.onend = () => {
-      if (recRef.current) {
-        try {
-          rec.start();
-        } catch {
-          /* already started */
+      recRef.current?.stop?.();
+      const rec = new SR();
+      rec.lang = "pt-BR";
+      rec.continuous = true;
+      rec.interimResults = true;
+
+      rec.onresult = (e: any) => {
+        const last = e.results[e.results.length - 1];
+        const transcript = String(last[0].transcript).trim();
+        if (!last.isFinal) {
+          if (voiceModeRef.current) setHeard(transcript);
+          return;
         }
+        const lower = transcript.toLowerCase();
+        if (!voiceModeRef.current) {
+          const hit = WAKE_WORDS.find((w) => lower.includes(w));
+          if (!hit) return;
+          setVoiceMode(true);
+          voiceModeRef.current = true;
+          const after = transcript.slice(lower.indexOf(hit) + hit.length).trim();
+          if (after.length > 1) void submit(after);
+          return;
+        }
+        if (speakingRef.current) return;
+        if (transcript.length > 1) void submit(transcript);
+      };
+      rec.onerror = () => setVoiceHint("Não consegui ouvir. Verifique o microfone.");
+      rec.onend = () => {
+        if (recRef.current === rec) {
+          try {
+            rec.start();
+          } catch {
+            /* noop */
+          }
+        }
+      };
+      recRef.current = rec;
+      try {
+        rec.start();
+      } catch {
+        /* noop */
       }
-    };
-    recRef.current = rec;
-    rec.start();
-    setWakeArmed(true);
-    setVoiceHint('Ouvindo... diga "Eevee" para me acordar.');
-  }, [listening, submit]);
+      setListening(true);
+      setVoiceHint(immediate ? null : 'Escutando... diga "Eevee" para me acordar.');
+    },
+    [submit],
+  );
 
   const stopRecognition = useCallback(() => {
     const rec = recRef.current;
     recRef.current = null;
     rec?.stop?.();
-    setWakeArmed(false);
     setListening(false);
     setVoiceHint(null);
   }, []);
 
-  useEffect(() => () => recRef.current?.stop?.(), []);
+  const openVoiceMode = useCallback(() => {
+    setVoiceMode(true);
+    voiceModeRef.current = true;
+    startRecognition(true);
+  }, [startRecognition]);
+
+  const closeVoiceMode = useCallback(() => {
+    setVoiceMode(false);
+    voiceModeRef.current = false;
+    stopRecognition();
+    stopSpeech();
+    setSpeaking(false);
+    setHeard("");
+  }, [stopRecognition]);
+
+  useEffect(() => {
+    return () => {
+      recRef.current?.stop?.();
+      recRef.current = null;
+      stopSpeech();
+    };
+  }, []);
 
   return (
-    <main className="relative flex min-h-screen flex-col items-center justify-between overflow-hidden px-4 py-8">
-      <header className="flex w-full max-w-4xl items-center justify-between text-xs uppercase tracking-[0.35em] text-muted-foreground">
-        <span className="font-[family-name:var(--font-terminal)]">E.V. // unidade doméstica</span>
+    <main className="relative flex min-h-screen flex-col items-center overflow-hidden px-4 py-6">
+      <header className="flex w-full max-w-4xl items-center justify-between">
+        <span className="ev-wordmark text-lg font-semibold text-foreground">E.V.</span>
         <div className="flex items-center gap-2">
           <button
-            onClick={() => setVoiceOut((v) => !v)}
-            aria-label="Alternar voz local"
-            className={`rounded-md border border-border p-2 transition-colors hover:bg-secondary ${voiceOut ? "text-accent" : "text-muted-foreground"}`}
+            onClick={() => {
+              setVoiceOut((v) => {
+                if (v) {
+                  stopSpeech();
+                  setSpeaking(false);
+                }
+                return !v;
+              });
+            }}
+            aria-label="Alternar voz da E.V."
+            className={`rounded-full border border-border p-2 transition-colors hover:bg-secondary ${voiceOut ? "text-accent" : "text-muted-foreground"}`}
           >
             {voiceOut ? <Volume2 size={16} /> : <VolumeX size={16} />}
           </button>
           <button
             onClick={() => setShowHistory((s) => !s)}
             aria-label="Histórico"
-            className="rounded-md border border-border p-2 text-muted-foreground transition-colors hover:bg-secondary"
+            className="rounded-full border border-border p-2 text-muted-foreground transition-colors hover:bg-secondary"
           >
             <Terminal size={16} />
           </button>
         </div>
       </header>
 
-      <section className="flex flex-1 flex-col items-center justify-center gap-6 py-6">
+      <section className="flex flex-1 flex-col items-center justify-center gap-8 py-6">
         <h1 className="sr-only">E.V. — inteligência artificial companheira</h1>
-        <SpiderMask expression={expression} speaking={busy} listening={listening} />
-        <p className="max-w-xl text-center text-base leading-relaxed text-foreground/90 md:text-lg">
-          {busy ? <span className="text-muted-foreground">processando...</span> : reply}
+        <SpiderMask
+          expression={expression}
+          speaking={speaking}
+          listening={listening}
+          thinking={busy}
+        />
+        <p className="max-w-xl text-balance text-center text-base leading-relaxed text-foreground/90 md:text-lg">
+          {busy ? <span className="text-muted-foreground">pensando...</span> : reply}
         </p>
       </section>
 
@@ -209,11 +270,11 @@ function EvHome() {
         >
           <button
             type="button"
-            onClick={() => (wakeArmed ? stopRecognition() : startRecognition())}
-            aria-label="Modo de voz"
-            className={`rounded-full p-2 transition-colors ${wakeArmed ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-secondary"}`}
+            onClick={() => (listening ? stopRecognition() : startRecognition(false))}
+            aria-label="Palavra-chave Eevee"
+            className={`rounded-full p-2 transition-colors ${listening ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-secondary"}`}
           >
-            {wakeArmed ? <Mic size={18} /> : <MicOff size={18} />}
+            <Mic size={18} />
           </button>
           <input
             value={input}
@@ -221,6 +282,14 @@ function EvHome() {
             placeholder="fala comigo..."
             className="flex-1 bg-transparent px-1 text-sm outline-none placeholder:text-muted-foreground"
           />
+          <button
+            type="button"
+            onClick={openVoiceMode}
+            aria-label="Conversa por voz"
+            className="rounded-full border border-accent/50 p-2 text-accent transition-colors hover:bg-accent/10"
+          >
+            <AudioLines size={18} />
+          </button>
           <button
             type="submit"
             disabled={busy}
@@ -232,8 +301,40 @@ function EvHome() {
         </form>
       </footer>
 
+      {voiceMode && (
+        <div className="fixed inset-0 z-30 flex flex-col items-center justify-center gap-10 bg-background/95 px-6 backdrop-blur-xl">
+          <SpiderMask
+            expression={expression}
+            speaking={speaking}
+            listening={listening && !speaking}
+            thinking={busy}
+          />
+          <div className="flex h-12 items-end gap-2">
+            {[0, 1, 2, 3, 4].map((i) => (
+              <span
+                key={i}
+                className="ev-orb"
+                style={{
+                  animationDelay: `${i * 120}ms`,
+                  animationPlayState: speaking || (listening && !busy) ? "running" : "paused",
+                }}
+              />
+            ))}
+          </div>
+          <p className="max-w-lg text-center text-sm text-muted-foreground">
+            {busy ? "pensando..." : speaking ? "falando..." : heard || "pode falar, tô te ouvindo."}
+          </p>
+          <button
+            onClick={closeVoiceMode}
+            className="rounded-full border border-border px-5 py-2 text-xs uppercase tracking-widest text-muted-foreground transition-colors hover:bg-secondary"
+          >
+            encerrar conversa
+          </button>
+        </div>
+      )}
+
       {showHistory && (
-        <aside className="terminal-panel fixed right-0 top-0 z-20 h-full w-full max-w-sm animate-in slide-in-from-right overflow-y-auto p-4 text-xs">
+        <aside className="terminal-panel fixed right-0 top-0 z-40 h-full w-full max-w-sm animate-in slide-in-from-right overflow-y-auto p-4 text-xs">
           <div className="mb-3 flex items-center justify-between text-muted-foreground">
             <span>~/ev/logs</span>
             <button onClick={() => setShowHistory(false)} aria-label="Fechar histórico">
