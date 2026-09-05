@@ -1,19 +1,47 @@
 let ctx: AudioContext | null = null;
 let currentAbort: AbortController | null = null;
+let sources: AudioBufferSourceNode[] = [];
 
-function getCtx() {
-  if (!ctx) ctx = new AudioContext({ sampleRate: 24000 });
+function getCtx(): AudioContext | null {
+  if (typeof window === "undefined") return null;
+  const AC = window.AudioContext ?? (window as any).webkitAudioContext;
+  if (!AC) return null;
+  if (!ctx || ctx.state === "closed") ctx = new AC({ sampleRate: 24000 });
   return ctx;
+}
+
+/** Must be called from a real user gesture (click/tap) so the browser allows audio. */
+export function unlockAudio() {
+  const audio = getCtx();
+  if (!audio) return;
+  void audio.resume().catch(() => undefined);
+  try {
+    const buf = audio.createBuffer(1, 1, 24000);
+    const src = audio.createBufferSource();
+    src.buffer = buf;
+    src.connect(audio.destination);
+    src.start(0);
+  } catch {
+    /* noop */
+  }
+  if (typeof window !== "undefined" && window.speechSynthesis) {
+    // Priming the speech engine keeps the browser fallback usable later.
+    window.speechSynthesis.cancel();
+  }
 }
 
 export function stopSpeech() {
   currentAbort?.abort();
-  if (typeof window !== "undefined") window.speechSynthesis?.cancel();
   currentAbort = null;
-  if (ctx) {
-    void ctx.close().catch(() => undefined);
-    ctx = null;
+  for (const s of sources) {
+    try {
+      s.stop();
+    } catch {
+      /* noop */
+    }
   }
+  sources = [];
+  if (typeof window !== "undefined") window.speechSynthesis?.cancel();
 }
 
 /** Streams TTS audio from the backend and plays it as it arrives. */
@@ -23,11 +51,16 @@ export async function speakStream(text: string, onDone?: () => void): Promise<vo
   currentAbort = controller;
 
   const audio = getCtx();
+  if (!audio) {
+    fallbackSpeak(text, onDone);
+    return;
+  }
   if (audio.state === "suspended") await audio.resume().catch(() => undefined);
 
   let playhead = 0;
   let pending = new Uint8Array(0);
   let lastEnd = 0;
+  let played = false;
 
   const playChunk = (incoming: Uint8Array) => {
     const bytes = new Uint8Array(pending.length + incoming.length);
@@ -43,18 +76,26 @@ export async function speakStream(text: string, onDone?: () => void): Promise<vo
     const source = audio.createBufferSource();
     source.buffer = buffer;
     source.connect(audio.destination);
-    playhead = playhead === 0 ? audio.currentTime + 0.06 : Math.max(playhead, audio.currentTime);
+    playhead = playhead === 0 ? audio.currentTime + 0.15 : Math.max(playhead, audio.currentTime);
     source.start(playhead);
     playhead += buffer.duration;
     lastEnd = playhead;
+    sources.push(source);
+    played = true;
   };
 
-  const res = await fetch("/api/tts", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ text }),
-    signal: controller.signal,
-  });
+  let res: Response;
+  try {
+    res = await fetch("/api/tts", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text }),
+      signal: controller.signal,
+    });
+  } catch {
+    fallbackSpeak(text, onDone);
+    return;
+  }
   if (!res.ok || !res.body) {
     // Fallback: local browser voice (used when cloud TTS is unavailable).
     fallbackSpeak(text, onDone);
@@ -89,11 +130,17 @@ export async function speakStream(text: string, onDone?: () => void): Promise<vo
     }
   }
 
+  if (!played) {
+    fallbackSpeak(text, onDone);
+    return;
+  }
+
   const wait = Math.max(0, (lastEnd - audio.currentTime) * 1000);
   setTimeout(() => {
     if (currentAbort === controller) currentAbort = null;
+    sources = [];
     onDone?.();
-  }, wait);
+  }, wait + 120);
 }
 
 function fallbackSpeak(text: string, onDone?: () => void) {
@@ -105,6 +152,8 @@ function fallbackSpeak(text: string, onDone?: () => void) {
   u.lang = "pt-BR";
   u.rate = 1.05;
   u.pitch = 1.15;
+  const pt = window.speechSynthesis.getVoices().find((v) => v.lang?.toLowerCase().startsWith("pt"));
+  if (pt) u.voice = pt;
   u.onend = () => onDone?.();
   u.onerror = () => onDone?.();
   window.speechSynthesis.cancel();
