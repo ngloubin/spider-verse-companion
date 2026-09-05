@@ -11,11 +11,11 @@ type Shape = Exclude<Expression, "olhos_piscando">;
 // Left lens outlines (right lens is mirrored) — angular, Brand New Day style.
 const LENS: Record<Shape, string> = {
   olhos_normais:
-    "M284 336 C260 300 210 256 150 236 C112 224 86 236 84 268 C82 306 128 344 184 352 C232 359 296 358 284 336 Z",
+    "M272 340 C254 302 210 256 150 236 C112 224 86 236 84 268 C82 306 128 344 184 352 C232 359 284 360 272 340 Z",
   olhos_semicerrados:
-    "M284 342 C264 320 216 290 156 276 C120 268 96 280 96 302 C96 328 136 352 188 358 C234 363 296 362 284 342 Z",
+    "M272 344 C256 322 216 290 156 276 C120 268 96 280 96 302 C96 328 136 352 188 358 C234 363 284 364 272 344 Z",
   olhos_arregalados:
-    "M288 334 C260 284 200 226 134 202 C92 187 62 208 60 250 C58 300 116 352 180 362 C236 371 302 366 288 334 Z",
+    "M276 338 C252 286 200 226 134 202 C92 187 62 208 60 250 C58 300 116 352 180 362 C236 371 290 370 276 338 Z",
 };
 
 const ORDER: Shape[] = ["olhos_normais", "olhos_semicerrados", "olhos_arregalados"];
@@ -130,7 +130,7 @@ export function SpiderMask({
         </g>
 
         {/* lens sockets (black rim) */}
-        <g transform="translate(0,10)">
+        <g transform="translate(0,-6)">
           <g className="ev-lens-rim">
             {ORDER.map((k) => (
               <path
