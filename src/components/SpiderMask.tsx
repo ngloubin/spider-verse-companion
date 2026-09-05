@@ -11,11 +11,11 @@ type Shape = Exclude<Expression, "olhos_piscando">;
 // Left lens outlines (right lens is mirrored) — angular, Brand New Day style.
 const LENS: Record<Shape, string> = {
   olhos_normais:
-    "M278 292 C252 240 194 202 136 202 C98 202 82 232 88 264 C95 304 142 340 200 346 C252 351 290 334 278 292 Z",
+    "M272 340 C254 302 210 256 150 236 C112 224 86 236 84 268 C82 306 128 344 184 352 C232 359 284 360 272 340 Z",
   olhos_semicerrados:
-    "M278 302 C256 272 200 246 144 248 C108 249 92 268 96 290 C102 318 146 344 202 348 C252 352 288 336 278 302 Z",
+    "M272 344 C256 322 216 290 156 276 C120 268 96 280 96 302 C96 328 136 352 188 358 C234 363 284 364 272 344 Z",
   olhos_arregalados:
-    "M282 284 C256 220 188 174 126 174 C84 174 64 210 70 252 C78 304 134 354 200 362 C258 369 298 342 282 284 Z",
+    "M276 338 C252 286 200 226 134 202 C92 187 62 208 60 250 C58 300 116 352 180 362 C236 371 290 370 276 338 Z",
 };
 
 const ORDER: Shape[] = ["olhos_normais", "olhos_semicerrados", "olhos_arregalados"];
@@ -60,10 +60,10 @@ export function SpiderMask({
       Array.from({ length: 22 }).map((_, i) => {
         const a = -Math.PI / 2 + (Math.PI * 2 * i) / 22;
         return {
-          x1: 300 + Math.cos(a) * 8,
-          y1: 250 + Math.sin(a) * 8,
-          x2: 300 + Math.cos(a) * 460,
-          y2: 250 + Math.sin(a) * 500,
+          x1: Math.round((300 + Math.cos(a) * 8) * 100) / 100,
+          y1: Math.round((300 + Math.sin(a) * 8) * 100) / 100,
+          x2: Math.round((300 + Math.cos(a) * 460) * 100) / 100,
+          y2: Math.round((300 + Math.sin(a) * 500) * 100) / 100,
         };
       }),
     [],
@@ -124,13 +124,13 @@ export function SpiderMask({
           </g>
           <g stroke="var(--web-line)" strokeWidth="2" fill="none">
             {[46, 92, 146, 208, 276, 352, 436].map((r) => (
-              <ellipse key={r} cx={300} cy={250} rx={r} ry={r * 1.1} />
+              <ellipse key={r} cx={300} cy={300} rx={r} ry={r * 1.1} />
             ))}
           </g>
         </g>
 
         {/* lens sockets (black rim) */}
-        <g transform="translate(0,34)">
+        <g transform="translate(0,-6)">
           <g className="ev-lens-rim">
             {ORDER.map((k) => (
               <path
@@ -138,7 +138,7 @@ export function SpiderMask({
                 d={LENS[k]}
                 fill="var(--lens-edge)"
                 stroke="var(--lens-edge)"
-                strokeWidth="26"
+                strokeWidth="22"
                 strokeLinejoin="round"
                 className="ev-lens-path"
                 data-active={k === shape}
@@ -151,7 +151,7 @@ export function SpiderMask({
                   d={LENS[k]}
                   fill="var(--lens-edge)"
                   stroke="var(--lens-edge)"
-                  strokeWidth="26"
+                  strokeWidth="22"
                   strokeLinejoin="round"
                   className="ev-lens-path"
                   data-active={k === shape}
@@ -186,9 +186,9 @@ export function SpiderMask({
             </g>
 
             {/* tech scan sheen inside lenses */}
-            <g opacity="0.5" clipPath="url(#headClip)">
-              <path d="M120 210 L250 210 L210 262 L96 262 Z" fill="url(#sheen)" />
-              <path d="M350 210 L480 210 L504 262 L390 262 Z" fill="url(#sheen)" />
+            <g opacity="0.35">
+              <path d="M118 250 L232 244 L196 288 L104 292 Z" fill="url(#sheen)" />
+              <path d="M368 244 L482 250 L496 292 L404 288 Z" fill="url(#sheen)" />
             </g>
           </g>
         </g>
