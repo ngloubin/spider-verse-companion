@@ -327,9 +327,14 @@ function EvHome() {
               />
             ))}
           </div>
-          <p className="max-w-lg text-center text-sm text-muted-foreground">
-            {busy ? "pensando..." : speaking ? "falando..." : heard || "pode falar, tô te ouvindo."}
-          </p>
+          <div className="max-w-lg space-y-2 text-center">
+            <p className="text-base leading-relaxed text-foreground/90">
+              {busy ? "pensando..." : reply}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {speaking ? "falando..." : heard || "pode falar, tô te ouvindo."}
+            </p>
+          </div>
           <button
             onClick={closeVoiceMode}
             className="rounded-full border border-border px-5 py-2 text-xs uppercase tracking-widest text-muted-foreground transition-colors hover:bg-secondary"
