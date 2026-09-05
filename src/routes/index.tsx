@@ -5,7 +5,7 @@ import { AudioLines, Mic, Send, Terminal, Volume2, VolumeX, X } from "lucide-rea
 
 import { SpiderMask, type Expression } from "@/components/SpiderMask";
 import { evHistory, evSend } from "@/lib/ev.functions";
-import { speakStream, stopSpeech } from "@/lib/tts";
+import { speakStream, stopSpeech, unlockAudio } from "@/lib/tts";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -190,6 +190,7 @@ function EvHome() {
   }, []);
 
   const openVoiceMode = useCallback(() => {
+    unlockAudio();
     setVoiceMode(true);
     voiceModeRef.current = true;
     startRecognition(true);
@@ -219,6 +220,7 @@ function EvHome() {
         <div className="flex items-center gap-2">
           <button
             onClick={() => {
+              unlockAudio();
               setVoiceOut((v) => {
                 if (v) {
                   stopSpeech();
@@ -264,13 +266,17 @@ function EvHome() {
         <form
           onSubmit={(e) => {
             e.preventDefault();
+            unlockAudio();
             void submit(input);
           }}
           className="terminal-panel flex items-center gap-2 rounded-full px-3 py-2"
         >
           <button
             type="button"
-            onClick={() => (listening ? stopRecognition() : startRecognition(false))}
+            onClick={() => {
+              unlockAudio();
+              listening ? stopRecognition() : startRecognition(false);
+            }}
             aria-label="Palavra-chave Eevee"
             className={`rounded-full p-2 transition-colors ${listening ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-secondary"}`}
           >
@@ -321,9 +327,14 @@ function EvHome() {
               />
             ))}
           </div>
-          <p className="max-w-lg text-center text-sm text-muted-foreground">
-            {busy ? "pensando..." : speaking ? "falando..." : heard || "pode falar, tô te ouvindo."}
-          </p>
+          <div className="max-w-lg space-y-2 text-center">
+            <p className="text-base leading-relaxed text-foreground/90">
+              {busy ? "pensando..." : reply}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {speaking ? "falando..." : heard || "pode falar, tô te ouvindo."}
+            </p>
+          </div>
           <button
             onClick={closeVoiceMode}
             className="rounded-full border border-border px-5 py-2 text-xs uppercase tracking-widest text-muted-foreground transition-colors hover:bg-secondary"
