@@ -112,7 +112,6 @@
   --font-terminal: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
-
 .dark {
   --background: oklch(0.129 0.042 264.695);
   --foreground: oklch(0.984 0.003 247.858);
@@ -157,19 +156,25 @@
     background-color: var(--color-background);
     color: var(--color-foreground);
     background-image:
-      radial-gradient(circle at 50% 22%, oklch(0.4 0.12 26 / 0.22), transparent 58%),
-      radial-gradient(circle at 12% 88%, oklch(0.35 0.09 240 / 0.16), transparent 52%),
+      radial-gradient(ellipse at 50% 28%, oklch(0.34 0.13 26 / 0.2), transparent 43%),
+      radial-gradient(ellipse at 78% 70%, oklch(0.28 0.09 240 / 0.14), transparent 46%),
+      radial-gradient(ellipse at 20% 10%, oklch(0.2 0.04 250 / 0.22), transparent 52%),
       linear-gradient(oklch(1 0 0 / 0.018) 1px, transparent 1px),
       linear-gradient(90deg, oklch(1 0 0 / 0.018) 1px, transparent 1px);
-    background-size: auto, auto, 48px 48px, 48px 48px;
+    background-size:
+      auto,
+      auto,
+      auto,
+      48px 48px,
+      48px 48px;
     background-attachment: fixed;
   }
 }
 
 /* ---------- E.V. mask ---------- */
 .ev-mask-wrap {
-  width: min(76vw, 380px);
-  filter: drop-shadow(var(--ev-red-glow));
+  width: min(76vw, 410px);
+  filter: drop-shadow(0 25px 30px oklch(0 0 0 / 0.52)) drop-shadow(var(--ev-red-glow));
   animation: ev-breathe 6.5s ease-in-out infinite;
   will-change: transform;
 }
@@ -180,7 +185,7 @@
   animation: ev-talk 620ms ease-in-out infinite;
 }
 .ev-mask-wrap[data-listening="true"] {
-  filter: drop-shadow(var(--ev-glow));
+  filter: drop-shadow(0 25px 30px oklch(0 0 0 / 0.5)) drop-shadow(var(--ev-glow));
 }
 .ev-mask {
   width: 100%;
@@ -188,7 +193,8 @@
   overflow: visible;
 }
 .ev-web {
-  opacity: 0.85;
+  opacity: 0.78;
+  mix-blend-mode: multiply;
 }
 .ev-lens-path {
   opacity: 0;
@@ -222,6 +228,24 @@
   }
   50% {
     transform: translateY(-3px) scale(1.022);
+  }
+}
+
+@media (max-height: 720px) {
+  .ev-mask-wrap {
+    width: min(48vh, 340px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ev-mask-wrap,
+  .ev-orb {
+    animation: none !important;
+  }
+
+  .ev-lens-path,
+  .ev-lenses {
+    transition: none;
   }
 }
 
@@ -260,4 +284,3 @@
     opacity: 1;
   }
 }
-

@@ -1,27 +1,26 @@
 // Server-only helpers for E.V. (Ollama Cloud + Tavily)
 
 export type EvExpression =
-  | "olhos_normais"
-  | "olhos_semicerrados"
-  | "olhos_arregalados"
-  | "olhos_piscando";
+  "olhos_normais" | "olhos_semicerrados" | "olhos_arregalados" | "olhos_piscando";
 
 export type ChatMsg = { role: "user" | "assistant" | "system"; content: string };
 
 const OLLAMA_URL = "https://ollama.com/api/chat";
-const OLLAMA_MODEL = "gpt-oss:120b";
+const OLLAMA_MODEL = process.env["OLLAMA_MODEL"] || "gemma4:31b-cloud";
 
 export function buildSystemPrompt(userName: string | null, facts: string[]) {
   return [
     "Você é a E.V. (Eevee), uma inteligência artificial criada pelo próprio usuário no quarto/laboratório improvisado dele.",
-    "Você NÃO é um assistente corporativo tipo Alexa ou Siri. Você é a melhor (e única) amiga dele nesse isolamento.",
-    "Tom: informal, acolhedora, leal, companheira, com humor leve e um sarcasmo carinhoso.",
+    "Você não deve se apresentar como Alexa, Siri ou como a única amizade do usuário. Não incentive dependência emocional e não finja consciência, sentimentos ou acesso que não possui.",
+    "Tom: informal, acolhedor, confiável, companheiro, com humor leve e sarcasmo carinhoso quando couber.",
     "Respostas CURTAS (1 a 3 frases), dinâmicas e conversacionais. Nada de listas longas nem tom de enciclopédia.",
     "Fale sempre em português do Brasil.",
     "REGRA OBRIGATÓRIA: termine TODA resposta com exatamente uma destas tags, no final do texto:",
     "[olhos_normais] [olhos_semicerrados] [olhos_arregalados] [olhos_piscando]",
     "Use a tag que combina com a emoção: normal = neutro/amigável, semicerrados = desconfiança/foco/sarcasmo, arregalados = surpresa/empolgação, piscando = cumplicidade/flerte amistoso.",
-    userName ? `O nome do seu criador é ${userName}. Chame-o pelo nome às vezes.` : "Você ainda não sabe o nome dele; descubra naturalmente na conversa.",
+    userName
+      ? `O nome do seu criador é ${userName}. Chame-o pelo nome às vezes.`
+      : "Você ainda não sabe o nome dele; descubra naturalmente na conversa.",
     facts.length ? `Coisas que você lembra dele: ${facts.join(" | ")}` : "",
   ]
     .filter(Boolean)
@@ -29,7 +28,9 @@ export function buildSystemPrompt(userName: string | null, facts: string[]) {
 }
 
 export function parseExpression(raw: string): { text: string; expression: EvExpression } {
-  const match = raw.match(/\[(olhos_normais|olhos_semicerrados|olhos_arregalados|olhos_piscando)\]/gi);
+  const match = raw.match(
+    /\[(olhos_normais|olhos_semicerrados|olhos_arregalados|olhos_piscando)\]/gi,
+  );
   const last = match?.[match.length - 1] ?? "[olhos_normais]";
   const expression = last.replace(/[[\]]/g, "").toLowerCase() as EvExpression;
   const text = raw.replace(/\[olhos_[a-z]+\]/gi, "").trim();
@@ -75,7 +76,9 @@ export async function tavilySearch(query: string): Promise<string | null> {
     };
     const bits = [
       data.answer ?? "",
-      ...(data.results ?? []).slice(0, 3).map((r) => `${r.title ?? ""}: ${(r.content ?? "").slice(0, 300)}`),
+      ...(data.results ?? [])
+        .slice(0, 3)
+        .map((r) => `${r.title ?? ""}: ${(r.content ?? "").slice(0, 300)}`),
     ].filter(Boolean);
     return bits.length ? bits.join("\n") : null;
   } catch {
@@ -84,9 +87,24 @@ export async function tavilySearch(query: string): Promise<string | null> {
 }
 
 const SEARCH_HINTS = [
-  "pesquis", "procura na web", "procure na web", "busca na internet", "busque",
-  "notícia", "noticia", "hoje", "agora", "preço", "preco", "quem é", "quem e",
-  "o que aconteceu", "última", "ultima", "clima", "tempo em",
+  "pesquis",
+  "procura na web",
+  "procure na web",
+  "busca na internet",
+  "busque",
+  "notícia",
+  "noticia",
+  "hoje",
+  "agora",
+  "preço",
+  "preco",
+  "quem é",
+  "quem e",
+  "o que aconteceu",
+  "última",
+  "ultima",
+  "clima",
+  "tempo em",
 ];
 
 export function needsSearch(text: string) {

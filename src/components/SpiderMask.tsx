@@ -1,27 +1,22 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
 
 export type Expression =
-  | "olhos_normais"
-  | "olhos_semicerrados"
-  | "olhos_arregalados"
-  | "olhos_piscando";
+  "olhos_normais" | "olhos_semicerrados" | "olhos_arregalados" | "olhos_piscando";
 
 type Shape = Exclude<Expression, "olhos_piscando">;
 
-// Left lens outlines (right lens is mirrored) — angular, Brand New Day style.
 const LENS: Record<Shape, string> = {
   olhos_normais:
-    "M272 340 C254 302 210 256 150 236 C112 224 86 236 84 268 C82 306 128 344 184 352 C232 359 284 360 272 340 Z",
+    "M270 341 C249 302 210 264 156 244 C116 229 86 239 83 271 C80 306 122 341 178 352 C225 361 283 362 270 341 Z",
   olhos_semicerrados:
-    "M272 344 C256 322 216 290 156 276 C120 268 96 280 96 302 C96 328 136 352 188 358 C234 363 284 364 272 344 Z",
+    "M270 345 C249 324 213 297 161 282 C124 271 97 281 96 303 C95 329 132 350 184 358 C230 364 283 365 270 345 Z",
   olhos_arregalados:
-    "M276 338 C252 286 200 226 134 202 C92 187 62 208 60 250 C58 300 116 352 180 362 C236 371 290 370 276 338 Z",
+    "M274 338 C251 286 205 236 143 210 C99 192 66 209 61 250 C55 297 111 349 177 362 C235 373 288 369 274 338 Z",
 };
 
 const ORDER: Shape[] = ["olhos_normais", "olhos_semicerrados", "olhos_arregalados"];
-
 const HEAD =
-  "M300 30 C182 30 96 108 78 224 C62 328 96 436 168 522 C214 577 258 600 300 600 C342 600 386 577 432 522 C504 436 538 328 522 224 C504 108 418 30 300 30 Z";
+  "M300 24 C187 24 104 95 78 207 C54 313 82 423 157 517 C207 580 258 610 300 610 C342 610 393 580 443 517 C518 423 546 313 522 207 C496 95 413 24 300 24 Z";
 
 export function SpiderMask({
   expression = "olhos_normais",
@@ -36,34 +31,46 @@ export function SpiderMask({
 }) {
   const [blink, setBlink] = useState(false);
   const shape: Shape = expression === "olhos_piscando" ? "olhos_normais" : expression;
+  const rawId = useId();
+  const ids = useMemo(() => {
+    const id = rawId.replace(/:/g, "");
+    return {
+      fill: `${id}-mask-fill`,
+      lens: `${id}-lens-fill`,
+      sheen: `${id}-sheen`,
+      clip: `${id}-head-clip`,
+      texture: `${id}-texture`,
+      glow: `${id}-lens-glow`,
+    };
+  }, [rawId]);
 
   useEffect(() => {
     if (expression !== "olhos_piscando") return;
     setBlink(true);
-    const t = setTimeout(() => setBlink(false), 200);
-    return () => clearTimeout(t);
+    const timeout = window.setTimeout(() => setBlink(false), 190);
+    return () => window.clearTimeout(timeout);
   }, [expression]);
 
   useEffect(() => {
-    const id = setInterval(
+    const interval = window.setInterval(
       () => {
         setBlink(true);
-        setTimeout(() => setBlink(false), 150);
+        window.setTimeout(() => setBlink(false), 150);
       },
       7000 + Math.random() * 6000,
     );
-    return () => clearInterval(id);
+    return () => window.clearInterval(interval);
   }, []);
 
   const spokes = useMemo(
     () =>
       Array.from({ length: 22 }).map((_, i) => {
-        const a = -Math.PI / 2 + (Math.PI * 2 * i) / 22;
+        const angle = -Math.PI / 2 + (Math.PI * 2 * i) / 22;
         return {
-          x1: Math.round((300 + Math.cos(a) * 8) * 100) / 100,
-          y1: Math.round((300 + Math.sin(a) * 8) * 100) / 100,
-          x2: Math.round((300 + Math.cos(a) * 460) * 100) / 100,
-          y2: Math.round((300 + Math.sin(a) * 500) * 100) / 100,
+          x1: Math.round((300 + Math.cos(angle) * 8) * 100) / 100,
+          y1: Math.round((300 + Math.sin(angle) * 8) * 100) / 100,
+          x2: Math.round((300 + Math.cos(angle) * 470) * 100) / 100,
+          y2: Math.round((300 + Math.sin(angle) * 505) * 100) / 100,
         };
       }),
     [],
@@ -76,119 +83,130 @@ export function SpiderMask({
       data-listening={listening}
       data-thinking={thinking}
     >
-      <svg viewBox="0 0 600 640" className="ev-mask" role="img" aria-label="Máscara da E.V.">
+      <svg viewBox="0 0 600 650" className="ev-mask" role="img" aria-label="Máscara da E.V.">
         <defs>
-          <radialGradient id="maskFill" cx="50%" cy="28%" r="78%">
+          <radialGradient id={ids.fill} cx="43%" cy="18%" r="86%">
             <stop offset="0%" stopColor="var(--mask-red-hi)" />
-            <stop offset="62%" stopColor="var(--mask-red-mid)" />
+            <stop offset="52%" stopColor="var(--mask-red-mid)" />
             <stop offset="100%" stopColor="var(--mask-red-lo)" />
           </radialGradient>
-          <linearGradient id="lensFill" x1="0.1" y1="0" x2="0.7" y2="1">
+          <linearGradient id={ids.lens} x1="0.12" y1="0" x2="0.82" y2="1">
             <stop offset="0%" stopColor="var(--lens-hi)" />
-            <stop offset="55%" stopColor="var(--lens-mid)" />
+            <stop offset="50%" stopColor="var(--lens-mid)" />
             <stop offset="100%" stopColor="var(--lens-lo)" />
           </linearGradient>
-          <linearGradient id="sheen" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor="oklch(1 0 0 / 0.85)" />
-            <stop offset="100%" stopColor="oklch(1 0 0 / 0)" />
+          <linearGradient id={ids.sheen} x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor="white" stopOpacity="0.9" />
+            <stop offset="38%" stopColor="white" stopOpacity="0.18" />
+            <stop offset="100%" stopColor="white" stopOpacity="0" />
           </linearGradient>
-          <filter id="lensGlow" x="-70%" y="-70%" width="240%" height="240%">
-            <feGaussianBlur stdDeviation="9" result="b" />
+          <filter id={ids.glow} x="-70%" y="-70%" width="240%" height="240%">
+            <feGaussianBlur stdDeviation="8" result="blur" />
             <feMerge>
-              <feMergeNode in="b" />
+              <feMergeNode in="blur" />
               <feMergeNode in="SourceGraphic" />
             </feMerge>
           </filter>
-          <clipPath id="headClip">
+          <filter id={ids.texture} x="-10%" y="-10%" width="120%" height="120%">
+            <feTurbulence
+              type="fractalNoise"
+              baseFrequency="0.045 0.18"
+              numOctaves="2"
+              seed="11"
+              result="noise"
+            />
+            <feColorMatrix in="noise" type="saturate" values="0" result="mono" />
+            <feComponentTransfer in="mono">
+              <feFuncA type="table" tableValues="0 0.07" />
+            </feComponentTransfer>
+            <feBlend in="SourceGraphic" in2="mono" mode="soft-light" />
+          </filter>
+          <clipPath id={ids.clip}>
             <path d={HEAD} />
           </clipPath>
         </defs>
 
-        {/* head */}
-        <path d={HEAD} fill="url(#maskFill)" />
-
-        {/* fabric shading */}
-        <g clipPath="url(#headClip)">
-          <ellipse cx="300" cy="120" rx="230" ry="150" fill="oklch(1 0 0 / 0.05)" />
-          <ellipse cx="300" cy="640" rx="260" ry="220" fill="oklch(0 0 0 / 0.35)" />
-          <ellipse cx="120" cy="360" rx="120" ry="260" fill="oklch(0 0 0 / 0.22)" />
-          <ellipse cx="480" cy="360" rx="120" ry="260" fill="oklch(0 0 0 / 0.22)" />
+        <path d={HEAD} fill={`url(#${ids.fill})`} filter={`url(#${ids.texture})`} />
+        <g clipPath={`url(#${ids.clip})`}>
+          <ellipse cx="300" cy="90" rx="232" ry="160" fill="white" opacity="0.08" />
+          <ellipse cx="300" cy="650" rx="280" ry="230" fill="black" opacity="0.38" />
+          <ellipse cx="105" cy="360" rx="140" ry="300" fill="black" opacity="0.23" />
+          <ellipse cx="495" cy="360" rx="140" ry="300" fill="black" opacity="0.23" />
+          <path
+            d="M112 108 Q300 26 488 108 L470 150 Q300 89 130 150 Z"
+            fill="white"
+            opacity="0.035"
+          />
         </g>
 
-        {/* web: radial spokes + arcs */}
-        <g clipPath="url(#headClip)" className="ev-web">
-          <g stroke="var(--web-line)" strokeWidth="2.4" fill="none" strokeLinecap="round">
+        <g clipPath={`url(#${ids.clip})`} className="ev-web">
+          <g stroke="var(--web-line)" strokeWidth="2.35" fill="none" strokeLinecap="round">
             {spokes.map((s, i) => (
               <line key={i} x1={s.x1} y1={s.y1} x2={s.x2} y2={s.y2} />
             ))}
           </g>
-          <g stroke="var(--web-line)" strokeWidth="2" fill="none">
-            {[46, 92, 146, 208, 276, 352, 436].map((r) => (
-              <ellipse key={r} cx={300} cy={300} rx={r} ry={r * 1.1} />
+          <g stroke="var(--web-line)" strokeWidth="1.9" fill="none">
+            {[44, 88, 138, 198, 270, 350, 438].map((r) => (
+              <ellipse key={r} cx="300" cy="294" rx={r} ry={r * 1.09} />
             ))}
           </g>
         </g>
 
-        {/* lens sockets (black rim) */}
-        <g transform="translate(0,-6)">
+        <g transform="translate(0,-5)">
           <g className="ev-lens-rim">
-            {ORDER.map((k) => (
+            {ORDER.map((key) => (
               <path
-                key={`l-${k}`}
-                d={LENS[k]}
+                key={`left-rim-${key}`}
+                d={LENS[key]}
                 fill="var(--lens-edge)"
                 stroke="var(--lens-edge)"
-                strokeWidth="22"
+                strokeWidth="24"
                 strokeLinejoin="round"
                 className="ev-lens-path"
-                data-active={k === shape}
+                data-active={key === shape}
               />
             ))}
             <g transform="translate(600,0) scale(-1,1)">
-              {ORDER.map((k) => (
+              {ORDER.map((key) => (
                 <path
-                  key={`r-${k}`}
-                  d={LENS[k]}
+                  key={`right-rim-${key}`}
+                  d={LENS[key]}
                   fill="var(--lens-edge)"
                   stroke="var(--lens-edge)"
-                  strokeWidth="22"
+                  strokeWidth="24"
                   strokeLinejoin="round"
                   className="ev-lens-path"
-                  data-active={k === shape}
+                  data-active={key === shape}
                 />
               ))}
             </g>
           </g>
-
-          {/* lenses */}
-          <g className="ev-lenses" data-blink={blink} filter="url(#lensGlow)">
+          <g className="ev-lenses" data-blink={blink} filter={`url(#${ids.glow})`}>
             <g>
-              {ORDER.map((k) => (
+              {ORDER.map((key) => (
                 <path
-                  key={`ll-${k}`}
-                  d={LENS[k]}
-                  fill="url(#lensFill)"
+                  key={`left-${key}`}
+                  d={LENS[key]}
+                  fill={`url(#${ids.lens})`}
                   className="ev-lens-path"
-                  data-active={k === shape}
+                  data-active={key === shape}
                 />
               ))}
             </g>
             <g transform="translate(600,0) scale(-1,1)">
-              {ORDER.map((k) => (
+              {ORDER.map((key) => (
                 <path
-                  key={`rl-${k}`}
-                  d={LENS[k]}
-                  fill="url(#lensFill)"
+                  key={`right-${key}`}
+                  d={LENS[key]}
+                  fill={`url(#${ids.lens})`}
                   className="ev-lens-path"
-                  data-active={k === shape}
+                  data-active={key === shape}
                 />
               ))}
             </g>
-
-            {/* tech scan sheen inside lenses */}
-            <g opacity="0.35">
-              <path d="M118 250 L232 244 L196 288 L104 292 Z" fill="url(#sheen)" />
-              <path d="M368 244 L482 250 L496 292 L404 288 Z" fill="url(#sheen)" />
+            <g opacity="0.42">
+              <path d="M106 248 L236 240 L198 288 L96 294 Z" fill={`url(#${ids.sheen})`} />
+              <path d="M364 240 L494 248 L504 294 L402 288 Z" fill={`url(#${ids.sheen})`} />
             </g>
           </g>
         </g>

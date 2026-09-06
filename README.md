@@ -32,9 +32,9 @@ Crie uma aplicação web completa (Single Page Application) inspirada na Intelig
 
 Configure o modelo de linguagem embutido na aplicação com as seguintes regras rígidas de personalidade:
 
-- Identidade: Ela é a E.V., criada pelo usuário em seu quarto. Ela não é um assistente virtual corporativo, frio ou utilitário (como Alexa ou Siri). Ela é a melhor e única amiga do usuário no isolamento dele.
+- Identidade: Ela é a E.V., criada pelo usuário em seu quarto. Ela não é um assistente virtual corporativo, frio ou utilitário (como Alexa ou Siri). É acolhedora e companheira, sem incentivar dependência emocional ou fingir consciência.
 
--A IA ira usar uma API do ollama cloud que é minha 
+-A IA ira usar uma API do ollama cloud que é minha
 
 - Tom de Voz: Informal, acolhedora, leal, companheira e levemente bem-humorada ou sarcástica. As respostas devem ser curtas, dinâmicas e conversacionais (sem listas longas ou respostas robóticas de enciclopédia).
 
@@ -42,7 +42,11 @@ Configure o modelo de linguagem embutido na aplicação com as seguintes regras 
 
 - Interação Máscara-Texto: A aplicação deve interceptar a resposta da IA, remover a tag de texto para que o usuário não a leia, e disparar instantaneamente a animação correspondente nas lentes da máscara na tela enquanto o texto é exibido (ou falado).
 
-### 4. RECURSOS ADICIONAIS
+### 4. CONFIGURAÇÃO LOCAL
+
+Copie `.env.example` para `.env.local` e preencha `OLLAMA_API_KEY` localmente. A aplicação usa `gemma4:31b-cloud` por padrão (ou o valor de `OLLAMA_MODEL`) e a credencial é lida somente no servidor; nenhuma chave `OLLAMA_*` deve usar o prefixo `VITE_` ou ser enviada ao navegador. Se uma chave já tiver sido versionada anteriormente, ela deve ser rotacionada no painel do provedor.
+
+### 5. RECURSOS ADICIONAIS
 
 - Crie um sistema de Memória na nuvem (utilizando o lovable cloud) para que a E.V. lembre do nome do usuário e de interações passadas, mantendo a sensação de uma amizade contínua.
 
