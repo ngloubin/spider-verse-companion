@@ -1,6 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 
 const ELEVENLABS_VOICE_ID = "FxZjRiAEBESrb7srpme7";
+/** Usada quando a voz preferida exige plano pago. */
+const FALLBACK_VOICE_ID = "EXAVITQu4vr4xnSDxMaL";
 
 export const Route = createFileRoute("/api/tts")({
   server: {
