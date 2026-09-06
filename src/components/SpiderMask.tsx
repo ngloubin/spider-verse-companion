@@ -126,7 +126,7 @@ export function SpiderMask({
           </clipPath>
         </defs>
 
-        <path d={HEAD} fill={`url(#${ids.fill})`} filter={`url(#${ids.texture})`} />
+        <path d={HEAD} fill={`url(#${ids.fill})`} />
         <g clipPath={`url(#${ids.clip})`}>
           <ellipse cx="300" cy="90" rx="232" ry="160" fill="white" opacity="0.08" />
           <ellipse cx="300" cy="650" rx="280" ry="230" fill="black" opacity="0.38" />
