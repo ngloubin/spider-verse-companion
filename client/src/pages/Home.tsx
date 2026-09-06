@@ -41,6 +41,8 @@ export default function Home() {
   const recRef = useRef<Recognition | null>(null);
   const voiceModeRef = useRef(false);
   const speakingRef = useRef(false);
+  const transcriptRef = useRef("");
+  const transcriptTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
     voiceModeRef.current = voiceMode;
@@ -53,7 +55,7 @@ export default function Home() {
   }, []);
 
   const speak = useCallback((text: string) => {
-    if (!voiceOut || !window.speechSynthesis) return;
+    if (!voiceModeRef.current || !voiceOut || !window.speechSynthesis) return;
     stopSpeech();
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = "pt-BR";
@@ -116,7 +118,16 @@ export default function Home() {
         if (after.length > 1) void submit(after);
         return;
       }
-      if (!speakingRef.current && transcript.length > 1) void submit(transcript);
+      if (speakingRef.current || transcript.length <= 1) return;
+      transcriptRef.current = `${transcriptRef.current} ${transcript}`.trim();
+      setHeard(transcriptRef.current);
+      if (transcriptTimerRef.current) window.clearTimeout(transcriptTimerRef.current);
+      transcriptTimerRef.current = window.setTimeout(() => {
+        const complete = transcriptRef.current.trim();
+        transcriptRef.current = "";
+        setHeard("");
+        if (complete) void submit(complete);
+      }, 780);
     };
     recognition.onerror = () => setVoiceHint("Não consegui ouvir. Verifique o microfone.");
     recognition.onend = () => {
@@ -131,6 +142,9 @@ export default function Home() {
   }, [submit]);
 
   const stopRecognition = useCallback(() => {
+    if (transcriptTimerRef.current) window.clearTimeout(transcriptTimerRef.current);
+    transcriptTimerRef.current = null;
+    transcriptRef.current = "";
     recRef.current?.stop();
     recRef.current = null;
     setListening(false);
@@ -159,8 +173,9 @@ export default function Home() {
   return (
     <main className="relative flex min-h-screen flex-col items-center overflow-hidden px-4 py-6">
       <header className="flex w-full max-w-4xl items-center justify-between">
-        <span className="ev-wordmark text-lg font-semibold text-foreground">E.V.</span>
+        <div className="brand-lockup"><span className="ev-wordmark text-lg font-semibold text-foreground">E.V.</span><span className="brand-subtitle">personal intelligence / 01</span></div>
         <div className="flex items-center gap-2">
+          <span className={`system-status ${chat.isPending ? "status-thinking" : listening ? "status-listening" : ""}`}><i />{chat.isPending ? "processando" : listening ? "ouvindo" : "online"}</span>
           <button onClick={() => { if (voiceOut) stopSpeech(); setVoiceOut((value) => !value); }} aria-label="Alternar voz da E.V." className={`control-button ${voiceOut ? "control-active" : ""}`}>
             {voiceOut ? <Volume2 size={17} /> : <VolumeX size={17} />}
           </button>
@@ -170,13 +185,15 @@ export default function Home() {
 
       <section className="flex flex-1 flex-col items-center justify-center gap-8 py-6">
         <h1 className="sr-only">E.V. — inteligência artificial companheira</h1>
+        <p className="mask-kicker">visual interface <span>•</span> neural presence</p>
         <SpiderMask expression={expression} speaking={speaking} listening={listening} thinking={chat.isPending} />
-        <p className="max-w-xl text-balance text-center text-base leading-relaxed text-foreground/90 md:text-lg">
+        <p className="reply-line max-w-xl text-balance text-center text-base leading-relaxed text-foreground/90 md:text-lg">
           {chat.isPending ? <span className="text-muted-foreground">pensando...</span> : reply}
         </p>
       </section>
 
       <footer className="w-full max-w-2xl space-y-3 pb-2">
+        <div className="command-caption"><span>TEXT CHANNEL</span><span className="caption-line" /><span>VOICE MODE OPENS AUDIO</span></div>
         {voiceHint && <p className="text-center text-xs text-accent">{voiceHint}</p>}
         <form onSubmit={(event) => { event.preventDefault(); void submit(input); }} className="terminal-panel command-bar">
           <button type="button" onClick={() => listening ? stopRecognition() : startRecognition()} aria-label="Ativar microfone" className={`command-button ${listening ? "command-active" : ""}`}><Mic size={18} /></button>

@@ -111,6 +111,9 @@ export function SpiderMask({
           <ellipse cx="105" cy="360" rx="140" ry="300" fill="black" opacity="0.23" />
           <ellipse cx="495" cy="360" rx="140" ry="300" fill="black" opacity="0.23" />
           <path d="M112 108 Q300 26 488 108 L470 150 Q300 89 130 150 Z" fill="white" opacity="0.035" />
+          <path d="M112 228 Q146 130 250 94" fill="none" stroke="white" strokeWidth="18" opacity="0.035" strokeLinecap="round" />
+          <path d="M118 470 Q165 565 238 596" fill="none" stroke="black" strokeWidth="34" opacity="0.1" strokeLinecap="round" />
+          <path d="M482 470 Q435 565 362 596" fill="none" stroke="black" strokeWidth="34" opacity="0.1" strokeLinecap="round" />
         </g>
 
         <g clipPath={`url(#${ids.clip})`} className="ev-web">
