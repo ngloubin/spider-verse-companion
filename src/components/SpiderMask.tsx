@@ -226,8 +226,9 @@ export function SpiderMask({
         </g>
 
         {/* lens sockets: thick black bevelled rim */}
-        <g transform="translate(0,-4)">
+        <g transform="translate(300,326) scale(0.88) translate(-300,-330)">
           <g className="ev-lens-rim">
+            <g transform="translate(-30,0)">
             {ORDER.map((k) => (
               <path
                 key={`l-${k}`}
@@ -240,7 +241,7 @@ export function SpiderMask({
                 data-active={k === shape}
               />
             ))}
-            <g transform="translate(600,0) scale(-1,1)">
+            <g transform="translate(600,0) scale(-1,1) translate(-30,0)">
               {ORDER.map((k) => (
                 <path
                   key={`r-${k}`}
@@ -267,7 +268,7 @@ export function SpiderMask({
                 </g>
               ))}
             </g>
-            <g transform="translate(600,0) scale(-1,1)">
+            <g transform="translate(600,0) scale(-1,1) translate(-30,0)">
               {ORDER.map((k) => (
                 <g key={`rl-${k}`} className="ev-lens-path" data-active={k === shape}>
                   <path d={LENS[k]} fill="url(#lensFill)" />
