@@ -261,7 +261,7 @@ export function SpiderMask({
 
           {/* lenses */}
           <g className="ev-lenses" data-blink={blink} filter="url(#lensGlow)">
-            <g>
+            <g transform="translate(-30,0)">
               {ORDER.map((k) => (
                 <g key={`ll-${k}`} className="ev-lens-path" data-active={k === shape}>
                   <path d={LENS[k]} fill="url(#lensFill)" />
