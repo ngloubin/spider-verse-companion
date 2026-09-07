@@ -1,4 +1,4 @@
-import { useEffect, useId, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useState, type CSSProperties } from "react";
 
 export type Expression =
   | "olhos_normais"
@@ -33,6 +33,7 @@ export function SpiderMask({
   thinking?: boolean;
 }) {
   const [blink, setBlink] = useState(false);
+  const [tilt, setTilt] = useState({ x: 0, y: 0 });
   const shape: Shape = expression === "olhos_piscando" ? "olhos_normais" : expression;
   const rawId = useId();
   const ids = useMemo(() => {
@@ -43,6 +44,8 @@ export function SpiderMask({
       sheen: `${id}-sheen`,
       clip: `${id}-head-clip`,
       glow: `${id}-lens-glow`,
+      mesh: `${id}-lens-mesh`,
+      depth: `${id}-lens-depth`,
     };
   }, [rawId]);
 
@@ -76,7 +79,20 @@ export function SpiderMask({
   );
 
   return (
-    <div className="ev-mask-wrap" data-speaking={speaking} data-listening={listening} data-thinking={thinking}>
+    <div
+      className="ev-mask-wrap"
+      data-speaking={speaking}
+      data-listening={listening}
+      data-thinking={thinking}
+      style={{ "--mask-tilt-x": `${tilt.x}deg`, "--mask-tilt-y": `${tilt.y}deg` } as CSSProperties}
+      onPointerMove={(event) => {
+        const box = event.currentTarget.getBoundingClientRect();
+        const x = ((event.clientX - box.left) / box.width - 0.5) * 5;
+        const y = ((event.clientY - box.top) / box.height - 0.5) * -4;
+        setTilt({ x, y });
+      }}
+      onPointerLeave={() => setTilt({ x: 0, y: 0 })}
+    >
       <svg viewBox="0 0 600 650" className="ev-mask" role="img" aria-label="Máscara da E.V.">
         <defs>
           <radialGradient id={ids.fill} cx="43%" cy="18%" r="86%">
@@ -94,6 +110,14 @@ export function SpiderMask({
             <stop offset="38%" stopColor="white" stopOpacity="0.18" />
             <stop offset="100%" stopColor="white" stopOpacity="0" />
           </linearGradient>
+          <pattern id={ids.mesh} width="8" height="8" patternUnits="userSpaceOnUse">
+            <circle cx="2" cy="2" r="1.15" fill="var(--lens-mesh)" />
+            <circle cx="6" cy="6" r="1.15" fill="var(--lens-mesh)" />
+          </pattern>
+          <filter id={ids.depth} x="-30%" y="-30%" width="160%" height="180%">
+            <feDropShadow dx="0" dy="7" stdDeviation="5" floodColor="#000" floodOpacity="0.72" />
+            <feDropShadow dx="-2" dy="-1" stdDeviation="1.2" floodColor="#fff" floodOpacity="0.28" />
+          </filter>
           <filter id={ids.glow} x="-70%" y="-70%" width="240%" height="240%">
             <feGaussianBlur stdDeviation="8" result="blur" />
             <feMerge>
@@ -126,13 +150,14 @@ export function SpiderMask({
         </g>
 
         <g transform="translate(0,-5)">
-          <g className="ev-lens-rim">
+          <g className="ev-lens-rim" filter={`url(#${ids.depth})`}>
             {ORDER.map((key) => <path key={`left-rim-${key}`} d={LENS[key]} fill="var(--lens-edge)" stroke="var(--lens-edge)" strokeWidth="24" strokeLinejoin="round" className="ev-lens-path" data-active={key === shape} />)}
             <g transform="translate(600,0) scale(-1,1)">{ORDER.map((key) => <path key={`right-rim-${key}`} d={LENS[key]} fill="var(--lens-edge)" stroke="var(--lens-edge)" strokeWidth="24" strokeLinejoin="round" className="ev-lens-path" data-active={key === shape} />)}</g>
           </g>
           <g className="ev-lenses" data-blink={blink} filter={`url(#${ids.glow})`}>
             <g>{ORDER.map((key) => <path key={`left-${key}`} d={LENS[key]} fill={`url(#${ids.lens})`} className="ev-lens-path" data-active={key === shape} />)}</g>
             <g transform="translate(600,0) scale(-1,1)">{ORDER.map((key) => <path key={`right-${key}`} d={LENS[key]} fill={`url(#${ids.lens})`} className="ev-lens-path" data-active={key === shape} />)}</g>
+            <g className="ev-lens-mesh" opacity="0.78"><g>{ORDER.map((key) => <path key={`left-mesh-${key}`} d={LENS[key]} fill={`url(#${ids.mesh})`} className="ev-lens-path" data-active={key === shape} />)}</g><g transform="translate(600,0) scale(-1,1)">{ORDER.map((key) => <path key={`right-mesh-${key}`} d={LENS[key]} fill={`url(#${ids.mesh})`} className="ev-lens-path" data-active={key === shape} />)}</g></g>
             <g opacity="0.42"><path d="M106 248 L236 240 L198 288 L96 294 Z" fill={`url(#${ids.sheen})`} /><path d="M364 240 L494 248 L504 294 L402 288 Z" fill={`url(#${ids.sheen})`} /></g>
           </g>
         </g>
