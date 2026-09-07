@@ -241,7 +241,9 @@ export function SpiderMask({
                 data-active={k === shape}
               />
             ))}
+            </g>
             <g transform="translate(600,0) scale(-1,1) translate(-30,0)">
+
               {ORDER.map((k) => (
                 <path
                   key={`r-${k}`}
