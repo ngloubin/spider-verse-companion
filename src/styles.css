@@ -159,30 +159,96 @@
     background-color: var(--color-background);
     color: var(--color-foreground);
     background-image:
-      radial-gradient(circle at 50% 22%, oklch(0.4 0.12 26 / 0.22), transparent 58%),
-      radial-gradient(circle at 12% 88%, oklch(0.35 0.09 240 / 0.16), transparent 52%),
-      linear-gradient(oklch(1 0 0 / 0.018) 1px, transparent 1px),
-      linear-gradient(90deg, oklch(1 0 0 / 0.018) 1px, transparent 1px);
-    background-size: auto, auto, 48px 48px, 48px 48px;
+      radial-gradient(ellipse 70% 50% at 50% 34%, oklch(0.34 0.11 26 / 0.28), transparent 70%),
+      radial-gradient(ellipse 80% 60% at 12% 92%, oklch(0.3 0.08 250 / 0.22), transparent 65%),
+      radial-gradient(ellipse 70% 60% at 92% 8%, oklch(0.28 0.06 250 / 0.18), transparent 65%),
+      linear-gradient(oklch(1 0 0 / 0.012) 1px, transparent 1px),
+      linear-gradient(90deg, oklch(1 0 0 / 0.012) 1px, transparent 1px);
+    background-size: auto, auto, auto, 64px 64px, 64px 64px;
     background-attachment: fixed;
+  }
+}
+
+/* ---------- ambience ---------- */
+.ev-stage {
+  position: relative;
+}
+/* soft volumetric halo behind the mask */
+.ev-halo {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: min(120vw, 900px);
+  aspect-ratio: 1;
+  translate: -50% -50%;
+  border-radius: 999px;
+  pointer-events: none;
+  background:
+    radial-gradient(circle, oklch(0.45 0.16 27 / 0.24) 0%, transparent 58%),
+    radial-gradient(circle, oklch(0.4 0.09 245 / 0.14) 25%, transparent 72%);
+  filter: blur(6px);
+  animation: ev-halo-pulse 9s ease-in-out infinite;
+}
+.ev-halo[data-listening="true"] {
+  background:
+    radial-gradient(circle, oklch(0.5 0.13 235 / 0.22) 0%, transparent 58%),
+    radial-gradient(circle, oklch(0.45 0.16 27 / 0.16) 28%, transparent 72%);
+}
+@keyframes ev-halo-pulse {
+  0%,
+  100% {
+    opacity: 0.75;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+}
+
+/* discreet drifting particles */
+.ev-dust {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.5;
+  background-image:
+    radial-gradient(1.5px 1.5px at 12% 24%, oklch(0.85 0.05 30 / 0.5), transparent 60%),
+    radial-gradient(1.5px 1.5px at 78% 16%, oklch(0.85 0.06 235 / 0.45), transparent 60%),
+    radial-gradient(1.2px 1.2px at 34% 72%, oklch(0.85 0.05 30 / 0.4), transparent 60%),
+    radial-gradient(1.2px 1.2px at 63% 58%, oklch(0.85 0.06 235 / 0.35), transparent 60%),
+    radial-gradient(1.4px 1.4px at 88% 82%, oklch(0.85 0.05 30 / 0.35), transparent 60%),
+    radial-gradient(1.2px 1.2px at 22% 90%, oklch(0.85 0.06 235 / 0.3), transparent 60%);
+  animation: ev-dust-drift 24s ease-in-out infinite alternate;
+}
+@keyframes ev-dust-drift {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(0, -22px, 0);
   }
 }
 
 /* ---------- E.V. mask ---------- */
 .ev-mask-wrap {
-  width: min(76vw, 380px);
-  filter: drop-shadow(var(--ev-red-glow));
-  animation: ev-breathe 6.5s ease-in-out infinite;
+  position: relative;
+  width: clamp(180px, 42vh, 400px);
+  filter: drop-shadow(var(--ev-red-glow)) drop-shadow(0 34px 44px oklch(0 0 0 / 0.55));
+  animation: ev-breathe 7s ease-in-out infinite;
+  transition: filter 500ms ease;
   will-change: transform;
 }
 .ev-mask-wrap[data-thinking="true"] {
-  animation: ev-breathe 2.6s ease-in-out infinite;
+  animation: ev-breathe 3s ease-in-out infinite;
 }
 .ev-mask-wrap[data-speaking="true"] {
-  animation: ev-talk 620ms ease-in-out infinite;
+  animation: ev-talk 700ms ease-in-out infinite;
 }
 .ev-mask-wrap[data-listening="true"] {
-  filter: drop-shadow(var(--ev-glow));
+  filter: drop-shadow(var(--ev-glow)) drop-shadow(0 0 60px oklch(0.5 0.19 26 / 0.35))
+    drop-shadow(0 34px 44px oklch(0 0 0 / 0.55));
 }
 .ev-mask {
   width: 100%;
@@ -190,21 +256,37 @@
   overflow: visible;
 }
 .ev-web {
-  opacity: 0.85;
+  opacity: 0.9;
 }
 .ev-lens-path {
   opacity: 0;
-  transition: opacity 320ms cubic-bezier(0.4, 0, 0.2, 1);
+  transition: opacity 380ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 .ev-lens-path[data-active="true"] {
   opacity: 1;
 }
 .ev-lenses {
-  transform-origin: 300px 290px;
-  transition: transform 120ms ease-in-out;
+  transform-origin: 300px 300px;
+  transition: transform 140ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 .ev-lenses[data-blink="true"] {
-  transform: scaleY(0.05);
+  transform: scaleY(0.06);
+}
+/* lens micro-drift while E.V. is processing */
+.ev-mask-wrap[data-thinking="true"] .ev-lenses {
+  animation: ev-lens-scan 1.9s ease-in-out infinite;
+}
+@keyframes ev-lens-scan {
+  0%,
+  100% {
+    transform: translateX(0) scaleY(1);
+  }
+  35% {
+    transform: translateX(-5px) scaleY(0.94);
+  }
+  70% {
+    transform: translateX(5px) scaleY(0.97);
+  }
 }
 
 @keyframes ev-breathe {
@@ -213,7 +295,7 @@
     transform: translateY(0) scale(1);
   }
   50% {
-    transform: translateY(-8px) scale(1.014);
+    transform: translateY(-9px) scale(1.012);
   }
 }
 
@@ -223,43 +305,180 @@
     transform: translateY(0) scale(1);
   }
   50% {
-    transform: translateY(-3px) scale(1.022);
+    transform: translateY(-3px) scale(1.02);
   }
 }
 
 /* ---------- surfaces ---------- */
 @utility terminal-panel {
   font-family: var(--font-terminal);
-  background: color-mix(in oklab, var(--card) 78%, transparent);
-  border: 1px solid color-mix(in oklab, var(--border) 90%, transparent);
-  backdrop-filter: blur(14px);
+  background: color-mix(in oklab, var(--card) 62%, transparent);
+  border: 1px solid color-mix(in oklab, var(--border) 80%, transparent);
+  backdrop-filter: blur(18px) saturate(1.1);
   box-shadow:
-    inset 0 1px 0 oklch(1 0 0 / 0.05),
-    0 20px 50px -30px oklch(0 0 0 / 0.9);
+    inset 0 1px 0 oklch(1 0 0 / 0.06),
+    0 24px 60px -34px oklch(0 0 0 / 0.95);
 }
 
 @utility ev-wordmark {
   font-family: var(--font-terminal);
   letter-spacing: 0.5em;
-  text-shadow: 0 0 24px oklch(0.52 0.18 25 / 0.55);
+  text-shadow: 0 0 26px oklch(0.52 0.18 25 / 0.6);
 }
 
-/* voice orb */
+/* command bar */
+.ev-command {
+  position: relative;
+  border-radius: 999px;
+  transition:
+    border-color 260ms ease,
+    box-shadow 260ms ease;
+}
+.ev-command:focus-within {
+  border-color: color-mix(in oklab, var(--accent) 55%, transparent);
+  box-shadow:
+    inset 0 1px 0 oklch(1 0 0 / 0.08),
+    0 0 0 1px color-mix(in oklab, var(--accent) 30%, transparent),
+    0 0 38px -10px color-mix(in oklab, var(--accent) 45%, transparent);
+}
+.ev-btn {
+  transition:
+    transform 160ms cubic-bezier(0.34, 1.4, 0.64, 1),
+    background-color 200ms ease,
+    color 200ms ease,
+    box-shadow 200ms ease;
+}
+.ev-btn:hover {
+  transform: translateY(-1px);
+}
+.ev-btn:active {
+  transform: scale(0.92);
+}
+
+/* answer text entrance */
+.ev-reply {
+  animation: ev-reply-in 520ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+@keyframes ev-reply-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+    filter: blur(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
+
+/* voice overlay entrance */
+.ev-voice-enter {
+  animation: ev-voice-in 520ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+@keyframes ev-voice-in {
+  from {
+    opacity: 0;
+    backdrop-filter: blur(0);
+    transform: scale(1.03);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* ---------- voice waveform ---------- */
+.ev-wave {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  height: 56px;
+}
 .ev-orb {
-  width: 14px;
+  width: 6px;
+  height: 10px;
   border-radius: 999px;
   background: linear-gradient(var(--color-accent), var(--color-primary));
-  animation: ev-bar 900ms ease-in-out infinite;
+  opacity: 0.45;
+  transform-origin: center;
+  transition:
+    background 400ms ease,
+    opacity 400ms ease;
+  animation: ev-bar 1.15s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  animation-play-state: paused;
+}
+/* idle: slow, faint breathing */
+.ev-wave[data-state="idle"] .ev-orb {
+  animation-duration: 3.4s;
+  animation-play-state: running;
+  opacity: 0.3;
+}
+/* listening: cyan, quick and reactive */
+.ev-wave[data-state="listening"] .ev-orb {
+  animation-duration: 780ms;
+  animation-play-state: running;
+  opacity: 0.95;
+  background: linear-gradient(var(--color-accent), oklch(0.75 0.12 210));
+  box-shadow: 0 0 16px -4px var(--color-accent);
+}
+/* thinking: slow pulsing sweep */
+.ev-wave[data-state="thinking"] .ev-orb {
+  animation-duration: 1.9s;
+  animation-play-state: running;
+  opacity: 0.7;
+  background: linear-gradient(oklch(0.72 0.09 250), oklch(0.5 0.08 260));
+}
+/* speaking: warm red, tall and lively */
+.ev-wave[data-state="speaking"] .ev-orb {
+  animation-duration: 620ms;
+  animation-play-state: running;
+  opacity: 1;
+  background: linear-gradient(oklch(0.72 0.16 32), var(--color-primary));
+  box-shadow: 0 0 20px -6px var(--color-primary);
+}
+/* error: flat, dim, blinking */
+.ev-wave[data-state="error"] .ev-orb {
+  animation: ev-bar-error 1.4s ease-in-out infinite;
+  animation-play-state: running;
+  background: linear-gradient(oklch(0.6 0.2 27), oklch(0.4 0.16 27));
 }
 @keyframes ev-bar {
   0%,
   100% {
     height: 10px;
-    opacity: 0.5;
   }
   50% {
-    height: 42px;
-    opacity: 1;
+    height: 46px;
   }
+}
+@keyframes ev-bar-error {
+  0%,
+  100% {
+    height: 8px;
+    opacity: 0.35;
+  }
+  50% {
+    height: 14px;
+    opacity: 0.9;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ev-mask-wrap,
+  .ev-halo,
+  .ev-dust,
+  .ev-orb,
+  .ev-reply,
+  .ev-voice-enter,
+  .ev-mask-wrap[data-thinking="true"] .ev-lenses {
+    animation: none !important;
+  }
+  .ev-btn:hover,
+  .ev-btn:active {
+    transform: none;
+  }
+}
+
 }
 
