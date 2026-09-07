@@ -8,6 +8,13 @@
       "when": 1788734122512,
       "tag": "0000_flaky_firebrand",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1788788261407,
+      "tag": "0001_smiling_electro",
+      "breakpoints": true
     }
   ]
 }
