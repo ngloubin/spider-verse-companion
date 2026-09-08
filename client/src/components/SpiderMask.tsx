@@ -7,7 +7,7 @@ export type Expression =
   | "olhos_arregalados"
   | "olhos_piscando";
 
-const MODEL_URL = "https://sketchfab.com/models/33c0495b85824c7995b1baf044b7d2fa/embed?autostart=1&autospin=0.18&preload=1&transparent=1&ui_controls=0&ui_infos=0&ui_watermark=0&ui_stop=0&ui_hint=0&ui_theme=dark&dnt=1";
+const MODEL_URL = "https://sketchfab.com/models/5e47c63e3dd4436f86e838cfaa334447/embed?autostart=1&autospin=0&preload=1&transparent=1&ui_controls=0&ui_infos=0&ui_watermark=0&ui_stop=0&ui_hint=0&ui_theme=dark&dnt=1";
 
 export function SpiderMask({
   expression = "olhos_normais",
@@ -42,7 +42,7 @@ export function SpiderMask({
       <div className="ev-model-backlight" />
       {!loaded && <div className="ev-model-loading"><span /><span /><span /></div>}
       <iframe
-        title="Máscara 3D do Homem-Aranha — referência Sketchfab"
+        title="Homem-Aranha 3D — referência Sketchfab"
         src={MODEL_URL}
         loading="eager"
         allow="autoplay; fullscreen; xr-spatial-tracking"
@@ -51,6 +51,6 @@ export function SpiderMask({
       />
       <div className="ev-model-sheen" />
     </div>
-    <a className="model-credit" href="https://sketchfab.com/3d-models/spider-man-mask-ps4-33c0495b85824c7995b1baf044b7d2fa" target="_blank" rel="noreferrer">3D reference · jerrylxia · CC BY 4.0</a>
+    <a className="model-credit" href="https://sketchfab.com/3d-models/spider-man-5e47c63e3dd4436f86e838cfaa334447" target="_blank" rel="noreferrer">3D reference · Kuzzy · CC BY 4.0</a>
   </div>;
 }
