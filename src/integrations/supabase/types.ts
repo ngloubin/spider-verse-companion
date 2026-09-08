@@ -14,6 +14,50 @@ export type Database = {
   }
   public: {
     Tables: {
+      ev_integrations: {
+        Row: {
+          created_at: string
+          description: string | null
+          endpoint: string
+          id: string
+          kind: string
+          name: string
+          session_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          endpoint: string
+          id?: string
+          kind?: string
+          name: string
+          session_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          endpoint?: string
+          id?: string
+          kind?: string
+          name?: string
+          session_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ev_integrations_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "ev_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ev_messages: {
         Row: {
           content: string
@@ -55,6 +99,7 @@ export type Database = {
           device_id: string
           id: string
           memory_facts: string[]
+          preferences: Json
           updated_at: string
           user_name: string | null
         }
@@ -63,6 +108,7 @@ export type Database = {
           device_id: string
           id?: string
           memory_facts?: string[]
+          preferences?: Json
           updated_at?: string
           user_name?: string | null
         }
@@ -71,6 +117,7 @@ export type Database = {
           device_id?: string
           id?: string
           memory_facts?: string[]
+          preferences?: Json
           updated_at?: string
           user_name?: string | null
         }
