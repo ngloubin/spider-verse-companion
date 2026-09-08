@@ -1,4 +1,5 @@
-import { useEffect, useId, useMemo, useState, type CSSProperties } from "react";
+import type { CSSProperties } from "react";
+import { useState } from "react";
 
 export type Expression =
   | "olhos_normais"
@@ -6,20 +7,7 @@ export type Expression =
   | "olhos_arregalados"
   | "olhos_piscando";
 
-type Shape = Exclude<Expression, "olhos_piscando">;
-
-const LENS: Record<Shape, string> = {
-  olhos_normais:
-    "M270 341 C249 302 210 264 156 244 C116 229 86 239 83 271 C80 306 122 341 178 352 C225 361 283 362 270 341 Z",
-  olhos_semicerrados:
-    "M270 345 C249 324 213 297 161 282 C124 271 97 281 96 303 C95 329 132 350 184 358 C230 364 283 365 270 345 Z",
-  olhos_arregalados:
-    "M274 338 C251 286 205 236 143 210 C99 192 66 209 61 250 C55 297 111 349 177 362 C235 373 288 369 274 338 Z",
-};
-
-const ORDER: Shape[] = ["olhos_normais", "olhos_semicerrados", "olhos_arregalados"];
-const HEAD =
-  "M300 24 C187 24 104 95 78 207 C54 313 82 423 157 517 C207 580 258 610 300 610 C342 610 393 580 443 517 C518 423 546 313 522 207 C496 95 413 24 300 24 Z";
+const MODEL_URL = "https://sketchfab.com/models/33c0495b85824c7995b1baf044b7d2fa/embed?autostart=1&autospin=0.18&preload=1&transparent=1&ui_controls=0&ui_infos=0&ui_watermark=0&ui_stop=0&ui_hint=0&ui_theme=dark&dnt=1";
 
 export function SpiderMask({
   expression = "olhos_normais",
@@ -32,136 +20,37 @@ export function SpiderMask({
   listening?: boolean;
   thinking?: boolean;
 }) {
-  const [blink, setBlink] = useState(false);
   const [tilt, setTilt] = useState({ x: 0, y: 0 });
-  const shape: Shape = expression === "olhos_piscando" ? "olhos_normais" : expression;
-  const rawId = useId();
-  const ids = useMemo(() => {
-    const id = rawId.replace(/:/g, "");
-    return {
-      fill: `${id}-mask-fill`,
-      lens: `${id}-lens-fill`,
-      sheen: `${id}-sheen`,
-      clip: `${id}-head-clip`,
-      glow: `${id}-lens-glow`,
-      mesh: `${id}-lens-mesh`,
-      depth: `${id}-lens-depth`,
-    };
-  }, [rawId]);
+  const [loaded, setLoaded] = useState(false);
+  const modelStyle = { "--mask-tilt-x": `${tilt.x}deg`, "--mask-tilt-y": `${tilt.y}deg` } as CSSProperties;
 
-  useEffect(() => {
-    if (expression !== "olhos_piscando") return;
-    setBlink(true);
-    const timeout = window.setTimeout(() => setBlink(false), 190);
-    return () => window.clearTimeout(timeout);
-  }, [expression]);
-
-  useEffect(() => {
-    const interval = window.setInterval(() => {
-      setBlink(true);
-      window.setTimeout(() => setBlink(false), 150);
-    }, 7000 + Math.random() * 6000);
-    return () => window.clearInterval(interval);
-  }, []);
-
-  const spokes = useMemo(
-    () =>
-      Array.from({ length: 22 }).map((_, i) => {
-        const angle = -Math.PI / 2 + (Math.PI * 2 * i) / 22;
-        return {
-          x1: Math.round((300 + Math.cos(angle) * 8) * 100) / 100,
-          y1: Math.round((300 + Math.sin(angle) * 8) * 100) / 100,
-          x2: Math.round((300 + Math.cos(angle) * 470) * 100) / 100,
-          y2: Math.round((300 + Math.sin(angle) * 505) * 100) / 100,
-        };
-      }),
-    [],
-  );
-
-  return (
-    <div
-      className="ev-mask-wrap"
-      data-speaking={speaking}
-      data-listening={listening}
-      data-thinking={thinking}
-      style={{ "--mask-tilt-x": `${tilt.x}deg`, "--mask-tilt-y": `${tilt.y}deg` } as CSSProperties}
-      onPointerMove={(event) => {
-        const box = event.currentTarget.getBoundingClientRect();
-        const x = ((event.clientX - box.left) / box.width - 0.5) * 5;
-        const y = ((event.clientY - box.top) / box.height - 0.5) * -4;
-        setTilt({ x, y });
-      }}
-      onPointerLeave={() => setTilt({ x: 0, y: 0 })}
-    >
-      <svg viewBox="0 0 600 650" className="ev-mask" role="img" aria-label="Máscara da E.V.">
-        <defs>
-          <radialGradient id={ids.fill} cx="43%" cy="18%" r="86%">
-            <stop offset="0%" stopColor="var(--mask-red-hi)" />
-            <stop offset="52%" stopColor="var(--mask-red-mid)" />
-            <stop offset="100%" stopColor="var(--mask-red-lo)" />
-          </radialGradient>
-          <linearGradient id={ids.lens} x1="0.12" y1="0" x2="0.82" y2="1">
-            <stop offset="0%" stopColor="var(--lens-hi)" />
-            <stop offset="50%" stopColor="var(--lens-mid)" />
-            <stop offset="100%" stopColor="var(--lens-lo)" />
-          </linearGradient>
-          <linearGradient id={ids.sheen} x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor="white" stopOpacity="0.9" />
-            <stop offset="38%" stopColor="white" stopOpacity="0.18" />
-            <stop offset="100%" stopColor="white" stopOpacity="0" />
-          </linearGradient>
-          <pattern id={ids.mesh} width="8" height="8" patternUnits="userSpaceOnUse">
-            <circle cx="2" cy="2" r="1.15" fill="var(--lens-mesh)" />
-            <circle cx="6" cy="6" r="1.15" fill="var(--lens-mesh)" />
-          </pattern>
-          <filter id={ids.depth} x="-30%" y="-30%" width="160%" height="180%">
-            <feDropShadow dx="0" dy="7" stdDeviation="5" floodColor="#000" floodOpacity="0.72" />
-            <feDropShadow dx="-2" dy="-1" stdDeviation="1.2" floodColor="#fff" floodOpacity="0.28" />
-          </filter>
-          <filter id={ids.glow} x="-70%" y="-70%" width="240%" height="240%">
-            <feGaussianBlur stdDeviation="8" result="blur" />
-            <feMerge>
-              <feMergeNode in="blur" />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
-          </filter>
-          <clipPath id={ids.clip}><path d={HEAD} /></clipPath>
-        </defs>
-
-        <path d={HEAD} fill={`url(#${ids.fill})`} />
-        <g clipPath={`url(#${ids.clip})`}>
-          <ellipse cx="300" cy="90" rx="232" ry="160" fill="white" opacity="0.08" />
-          <ellipse cx="300" cy="650" rx="280" ry="230" fill="black" opacity="0.38" />
-          <ellipse cx="105" cy="360" rx="140" ry="300" fill="black" opacity="0.23" />
-          <ellipse cx="495" cy="360" rx="140" ry="300" fill="black" opacity="0.23" />
-          <path d="M112 108 Q300 26 488 108 L470 150 Q300 89 130 150 Z" fill="white" opacity="0.035" />
-          <path d="M112 228 Q146 130 250 94" fill="none" stroke="white" strokeWidth="18" opacity="0.035" strokeLinecap="round" />
-          <path d="M118 470 Q165 565 238 596" fill="none" stroke="black" strokeWidth="34" opacity="0.1" strokeLinecap="round" />
-          <path d="M482 470 Q435 565 362 596" fill="none" stroke="black" strokeWidth="34" opacity="0.1" strokeLinecap="round" />
-        </g>
-
-        <g clipPath={`url(#${ids.clip})`} className="ev-web">
-          <g stroke="var(--web-line)" strokeWidth="2.35" fill="none" strokeLinecap="round">
-            {spokes.map((s, i) => <line key={i} x1={s.x1} y1={s.y1} x2={s.x2} y2={s.y2} />)}
-          </g>
-          <g stroke="var(--web-line)" strokeWidth="1.9" fill="none">
-            {[44, 88, 138, 198, 270, 350, 438].map((r) => <ellipse key={r} cx="300" cy="294" rx={r} ry={r * 1.09} />)}
-          </g>
-        </g>
-
-        <g transform="translate(0,-5)">
-          <g className="ev-lens-rim" filter={`url(#${ids.depth})`}>
-            {ORDER.map((key) => <path key={`left-rim-${key}`} d={LENS[key]} fill="var(--lens-edge)" stroke="var(--lens-edge)" strokeWidth="24" strokeLinejoin="round" className="ev-lens-path" data-active={key === shape} />)}
-            <g transform="translate(600,0) scale(-1,1)">{ORDER.map((key) => <path key={`right-rim-${key}`} d={LENS[key]} fill="var(--lens-edge)" stroke="var(--lens-edge)" strokeWidth="24" strokeLinejoin="round" className="ev-lens-path" data-active={key === shape} />)}</g>
-          </g>
-          <g className="ev-lenses" data-blink={blink} filter={`url(#${ids.glow})`}>
-            <g>{ORDER.map((key) => <path key={`left-${key}`} d={LENS[key]} fill={`url(#${ids.lens})`} className="ev-lens-path" data-active={key === shape} />)}</g>
-            <g transform="translate(600,0) scale(-1,1)">{ORDER.map((key) => <path key={`right-${key}`} d={LENS[key]} fill={`url(#${ids.lens})`} className="ev-lens-path" data-active={key === shape} />)}</g>
-            <g className="ev-lens-mesh" opacity="0.78"><g>{ORDER.map((key) => <path key={`left-mesh-${key}`} d={LENS[key]} fill={`url(#${ids.mesh})`} className="ev-lens-path" data-active={key === shape} />)}</g><g transform="translate(600,0) scale(-1,1)">{ORDER.map((key) => <path key={`right-mesh-${key}`} d={LENS[key]} fill={`url(#${ids.mesh})`} className="ev-lens-path" data-active={key === shape} />)}</g></g>
-            <g opacity="0.42"><path d="M106 248 L236 240 L198 288 L96 294 Z" fill={`url(#${ids.sheen})`} /><path d="M364 240 L494 248 L504 294 L402 288 Z" fill={`url(#${ids.sheen})`} /></g>
-          </g>
-        </g>
-      </svg>
+  return <div
+    className="ev-mask-wrap"
+    data-speaking={speaking}
+    data-listening={listening}
+    data-thinking={thinking}
+    data-expression={expression}
+    data-loaded={loaded}
+    style={modelStyle}
+    onPointerMove={(event) => {
+      const box = event.currentTarget.getBoundingClientRect();
+      setTilt({ x: ((event.clientX - box.left) / box.width - 0.5) * 5, y: ((event.clientY - box.top) / box.height - 0.5) * -4 });
+    }}
+    onPointerLeave={() => setTilt({ x: 0, y: 0 })}
+  >
+    <div className="ev-model-stage">
+      <div className="ev-model-backlight" />
+      {!loaded && <div className="ev-model-loading"><span /><span /><span /></div>}
+      <iframe
+        title="Máscara 3D do Homem-Aranha — referência Sketchfab"
+        src={MODEL_URL}
+        loading="eager"
+        allow="autoplay; fullscreen; xr-spatial-tracking"
+        referrerPolicy="strict-origin-when-cross-origin"
+        onLoad={() => setLoaded(true)}
+      />
+      <div className="ev-model-sheen" />
     </div>
-  );
+    <a className="model-credit" href="https://sketchfab.com/3d-models/spider-man-mask-ps4-33c0495b85824c7995b1baf044b7d2fa" target="_blank" rel="noreferrer">3D reference · jerrylxia · CC BY 4.0</a>
+  </div>;
 }
