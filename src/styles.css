@@ -99,18 +99,21 @@
   --sidebar-ring: oklch(0.52 0.18 25);
 
   /* E.V. mask tokens */
-  --mask-red-hi: oklch(0.58 0.19 27);
-  --mask-red-mid: oklch(0.44 0.17 26);
-  --mask-red-lo: oklch(0.26 0.11 24);
-  --web-line: oklch(0.1 0.02 25 / 0.9);
+  --mask-red-hi: oklch(0.62 0.2 28);
+  --mask-red-mid: oklch(0.47 0.19 27);
+  --mask-red-lo: oklch(0.24 0.11 25);
+  --web-line: oklch(0.08 0.02 25 / 0.92);
+  --web-shadow: oklch(0.02 0 0 / 0.45);
   --lens-hi: oklch(0.99 0.005 230);
-  --lens-mid: oklch(0.93 0.02 235);
-  --lens-lo: oklch(0.78 0.05 240);
-  --lens-edge: oklch(0.09 0.02 25);
-  --ev-glow: 0 0 44px oklch(0.62 0.13 235 / 0.4);
-  --ev-red-glow: 0 0 70px oklch(0.5 0.19 26 / 0.45);
+  --lens-mid: oklch(0.94 0.015 235);
+  --lens-lo: oklch(0.74 0.04 240);
+  --lens-edge: oklch(0.08 0.015 25);
+  --ev-glow: 0 0 46px oklch(0.62 0.13 235 / 0.42);
+  --ev-red-glow: 0 0 90px oklch(0.5 0.19 26 / 0.5);
   --font-terminal: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
 }
+
+
 
 .dark {
   --background: oklch(0.129 0.042 264.695);
@@ -156,59 +159,196 @@
     background-color: var(--color-background);
     color: var(--color-foreground);
     background-image:
-      radial-gradient(ellipse at 50% 28%, oklch(0.34 0.13 26 / 0.2), transparent 43%),
-      radial-gradient(ellipse at 78% 70%, oklch(0.28 0.09 240 / 0.14), transparent 46%),
-      radial-gradient(ellipse at 20% 10%, oklch(0.2 0.04 250 / 0.22), transparent 52%),
-      linear-gradient(oklch(1 0 0 / 0.018) 1px, transparent 1px),
-      linear-gradient(90deg, oklch(1 0 0 / 0.018) 1px, transparent 1px);
-    background-size:
-      auto,
-      auto,
-      auto,
-      48px 48px,
-      48px 48px;
+      radial-gradient(ellipse 70% 50% at 50% 34%, oklch(0.34 0.11 26 / 0.28), transparent 70%),
+      radial-gradient(ellipse 80% 60% at 12% 92%, oklch(0.3 0.08 250 / 0.22), transparent 65%),
+      radial-gradient(ellipse 70% 60% at 92% 8%, oklch(0.28 0.06 250 / 0.18), transparent 65%),
+      linear-gradient(oklch(1 0 0 / 0.012) 1px, transparent 1px),
+      linear-gradient(90deg, oklch(1 0 0 / 0.012) 1px, transparent 1px);
+    background-size: auto, auto, auto, 64px 64px, 64px 64px;
     background-attachment: fixed;
   }
 }
 
-/* ---------- E.V. mask ---------- */
+/* ---------- ambience ---------- */
+.ev-stage {
+  position: relative;
+}
+/* soft volumetric halo behind the mask */
+.ev-halo {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: min(120vw, 900px);
+  aspect-ratio: 1;
+  translate: -50% -50%;
+  border-radius: 999px;
+  pointer-events: none;
+  background:
+    radial-gradient(circle, oklch(0.45 0.16 27 / 0.24) 0%, transparent 58%),
+    radial-gradient(circle, oklch(0.4 0.09 245 / 0.14) 25%, transparent 72%);
+  filter: blur(6px);
+  animation: ev-halo-pulse 9s ease-in-out infinite;
+}
+.ev-halo[data-state="listening"],
+.ev-halo[data-listening="true"] {
+  background:
+    radial-gradient(circle, oklch(0.5 0.13 235 / 0.22) 0%, transparent 58%),
+    radial-gradient(circle, oklch(0.45 0.16 27 / 0.16) 28%, transparent 72%);
+}
+@keyframes ev-halo-pulse {
+  0%,
+  100% {
+    opacity: 0.75;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+}
+
+/* discreet drifting particles */
+.ev-dust {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.5;
+  background-image:
+    radial-gradient(1.5px 1.5px at 12% 24%, oklch(0.85 0.05 30 / 0.5), transparent 60%),
+    radial-gradient(1.5px 1.5px at 78% 16%, oklch(0.85 0.06 235 / 0.45), transparent 60%),
+    radial-gradient(1.2px 1.2px at 34% 72%, oklch(0.85 0.05 30 / 0.4), transparent 60%),
+    radial-gradient(1.2px 1.2px at 63% 58%, oklch(0.85 0.06 235 / 0.35), transparent 60%),
+    radial-gradient(1.4px 1.4px at 88% 82%, oklch(0.85 0.05 30 / 0.35), transparent 60%),
+    radial-gradient(1.2px 1.2px at 22% 90%, oklch(0.85 0.06 235 / 0.3), transparent 60%);
+  animation: ev-dust-drift 24s ease-in-out infinite alternate;
+}
+@keyframes ev-dust-drift {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(0, -22px, 0);
+  }
+}
+
+/* particle field canvas */
+.ev-field {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ---------- E.V. mask (photographic plates) ---------- */
 .ev-mask-wrap {
-  width: min(76vw, 410px);
-  filter: drop-shadow(0 25px 30px oklch(0 0 0 / 0.52)) drop-shadow(var(--ev-red-glow));
-  animation: ev-breathe 6.5s ease-in-out infinite;
+  position: relative;
+  width: clamp(190px, 40vh, 380px);
+  --px: 0;
+  --py: 0;
+  --energy: 0;
+  transform: translate3d(calc(var(--px) * 9px), calc(var(--py) * 7px), 0);
+  transition: filter 600ms ease;
   will-change: transform;
 }
-.ev-mask-wrap[data-thinking="true"] {
-  animation: ev-breathe 2.6s ease-in-out infinite;
+.ev-mask-plate {
+  position: relative;
+  aspect-ratio: 1024 / 1280;
+  animation: ev-breathe 8s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+  filter: drop-shadow(0 30px 46px oklch(0 0 0 / 0.62))
+    drop-shadow(0 0 calc(46px + var(--energy) * 40px) oklch(0.45 0.19 27 / 0.4));
+  transition: filter 600ms ease;
 }
-.ev-mask-wrap[data-speaking="true"] {
-  animation: ev-talk 620ms ease-in-out infinite;
+.ev-mask-wrap[data-thinking="true"] .ev-mask-plate {
+  animation: ev-breathe 4.6s cubic-bezier(0.45, 0, 0.55, 1) infinite;
 }
-.ev-mask-wrap[data-listening="true"] {
-  filter: drop-shadow(0 25px 30px oklch(0 0 0 / 0.5)) drop-shadow(var(--ev-glow));
+.ev-mask-wrap[data-speaking="true"] .ev-mask-plate {
+  animation: ev-talk 900ms cubic-bezier(0.37, 0, 0.63, 1) infinite;
 }
-.ev-mask {
+.ev-mask-wrap[data-listening="true"] .ev-mask-plate {
+  filter: drop-shadow(0 30px 46px oklch(0 0 0 / 0.62))
+    drop-shadow(0 0 70px oklch(0.6 0.13 235 / 0.4));
+}
+.ev-mask-layer {
+  position: absolute;
+  inset: 0;
   width: 100%;
-  height: auto;
-  overflow: visible;
-}
-.ev-web {
-  opacity: 0.78;
-  mix-blend-mode: multiply;
-}
-.ev-lens-path {
+  height: 100%;
+  object-fit: contain;
   opacity: 0;
-  transition: opacity 320ms cubic-bezier(0.4, 0, 0.2, 1);
+  transform: scale(0.997);
+  transition:
+    opacity 260ms cubic-bezier(0.33, 1, 0.68, 1),
+    transform 420ms cubic-bezier(0.33, 1, 0.68, 1);
+  user-select: none;
 }
-.ev-lens-path[data-active="true"] {
+.ev-mask-layer[data-active="true"] {
   opacity: 1;
+  transform: scale(1);
 }
-.ev-lenses {
-  transform-origin: 300px 290px;
-  transition: transform 120ms ease-in-out;
+/* contact shadow grounding the mask in the scene */
+.ev-mask-contact {
+  position: absolute;
+  left: 50%;
+  bottom: -4%;
+  width: 74%;
+  height: 12%;
+  translate: -50% 0;
+  border-radius: 999px;
+  background: radial-gradient(ellipse, oklch(0 0 0 / 0.6), transparent 70%);
+  filter: blur(14px);
+  pointer-events: none;
 }
-.ev-lenses[data-blink="true"] {
-  transform: scaleY(0.05);
+/* lighting layers that respond to E.V.'s state */
+.ev-mask-lightwrap {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  mix-blend-mode: screen;
+}
+.ev-mask-key,
+.ev-mask-rim,
+.ev-mask-lensglow {
+  position: absolute;
+  inset: 0;
+  border-radius: 46% 46% 42% 42% / 54% 54% 46% 46%;
+}
+.ev-mask-key {
+  background: radial-gradient(
+    ellipse 46% 34% at calc(34% + var(--px) * 6%) calc(22% + var(--py) * 5%),
+    oklch(0.8 0.05 240 / 0.14),
+    transparent 70%
+  );
+}
+.ev-mask-rim {
+  background: radial-gradient(
+    ellipse 40% 60% at calc(88% + var(--px) * 5%) 48%,
+    oklch(0.62 0.2 27 / calc(0.2 + var(--energy) * 0.18)),
+    transparent 68%
+  );
+}
+.ev-mask-lensglow {
+  background:
+    radial-gradient(ellipse 13% 7% at 31% 41%, oklch(0.85 0.1 220 / calc(0.06 + var(--energy) * 0.22)), transparent 70%),
+    radial-gradient(ellipse 13% 7% at 69% 41%, oklch(0.85 0.1 220 / calc(0.06 + var(--energy) * 0.22)), transparent 70%);
+  opacity: 0.9;
+  transition: opacity 400ms ease;
+}
+.ev-mask-wrap[data-thinking="true"] .ev-mask-lensglow {
+  animation: ev-lens-scan 2.4s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+@keyframes ev-lens-scan {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: translateX(-2px);
+  }
+  50% {
+    opacity: 1;
+    transform: translateX(2px);
+  }
 }
 
 @keyframes ev-breathe {
@@ -217,7 +357,7 @@
     transform: translateY(0) scale(1);
   }
   50% {
-    transform: translateY(-8px) scale(1.014);
+    transform: translateY(-8px) scale(1.008);
   }
 }
 
@@ -226,61 +366,212 @@
   100% {
     transform: translateY(0) scale(1);
   }
-  50% {
-    transform: translateY(-3px) scale(1.022);
+  35% {
+    transform: translateY(-4px) scale(1.014);
+  }
+  70% {
+    transform: translateY(-1px) scale(1.006);
   }
 }
 
-@media (max-height: 720px) {
-  .ev-mask-wrap {
-    width: min(48vh, 340px);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .ev-mask-wrap,
-  .ev-orb {
-    animation: none !important;
-  }
-
-  .ev-lens-path,
-  .ev-lenses {
-    transition: none;
-  }
-}
 
 /* ---------- surfaces ---------- */
 @utility terminal-panel {
   font-family: var(--font-terminal);
-  background: color-mix(in oklab, var(--card) 78%, transparent);
-  border: 1px solid color-mix(in oklab, var(--border) 90%, transparent);
-  backdrop-filter: blur(14px);
+  background: color-mix(in oklab, var(--card) 62%, transparent);
+  border: 1px solid color-mix(in oklab, var(--border) 80%, transparent);
+  backdrop-filter: blur(18px) saturate(1.1);
   box-shadow:
-    inset 0 1px 0 oklch(1 0 0 / 0.05),
-    0 20px 50px -30px oklch(0 0 0 / 0.9);
+    inset 0 1px 0 oklch(1 0 0 / 0.06),
+    0 24px 60px -34px oklch(0 0 0 / 0.95);
 }
 
 @utility ev-wordmark {
   font-family: var(--font-terminal);
   letter-spacing: 0.5em;
-  text-shadow: 0 0 24px oklch(0.52 0.18 25 / 0.55);
+  text-shadow: 0 0 26px oklch(0.52 0.18 25 / 0.6);
 }
 
-/* voice orb */
+/* command bar */
+.ev-command {
+  position: relative;
+  border-radius: 999px;
+  transition:
+    border-color 260ms ease,
+    box-shadow 260ms ease;
+}
+.ev-command:focus-within {
+  border-color: color-mix(in oklab, var(--accent) 55%, transparent);
+  box-shadow:
+    inset 0 1px 0 oklch(1 0 0 / 0.08),
+    0 0 0 1px color-mix(in oklab, var(--accent) 30%, transparent),
+    0 0 38px -10px color-mix(in oklab, var(--accent) 45%, transparent);
+}
+.ev-btn {
+  transition:
+    transform 160ms cubic-bezier(0.34, 1.4, 0.64, 1),
+    background-color 200ms ease,
+    color 200ms ease,
+    box-shadow 200ms ease;
+}
+.ev-btn:hover {
+  transform: translateY(-1px);
+}
+.ev-btn:active {
+  transform: scale(0.92);
+}
+
+/* answer text entrance */
+.ev-reply {
+  animation: ev-reply-in 520ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+@keyframes ev-reply-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+    filter: blur(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
+
+/* voice overlay entrance */
+.ev-voice-enter {
+  animation: ev-voice-in 520ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+@keyframes ev-voice-in {
+  from {
+    opacity: 0;
+    backdrop-filter: blur(0);
+    transform: scale(1.03);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* ---------- voice waveform ---------- */
+.ev-wave {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  height: 56px;
+}
 .ev-orb {
-  width: 14px;
+  width: 6px;
+  height: 10px;
   border-radius: 999px;
   background: linear-gradient(var(--color-accent), var(--color-primary));
-  animation: ev-bar 900ms ease-in-out infinite;
+  opacity: 0.45;
+  transform-origin: center;
+  transition:
+    background 400ms ease,
+    opacity 400ms ease;
+  animation: ev-bar 1.15s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  animation-play-state: paused;
+}
+/* idle: slow, faint breathing */
+.ev-wave[data-state="idle"] .ev-orb {
+  animation-duration: 3.4s;
+  animation-play-state: running;
+  opacity: 0.3;
+}
+/* listening: cyan, quick and reactive */
+.ev-wave[data-state="listening"] .ev-orb {
+  animation-duration: 780ms;
+  animation-play-state: running;
+  opacity: 0.95;
+  background: linear-gradient(var(--color-accent), oklch(0.75 0.12 210));
+  box-shadow: 0 0 16px -4px var(--color-accent);
+}
+/* thinking: slow pulsing sweep */
+.ev-wave[data-state="thinking"] .ev-orb {
+  animation-duration: 1.9s;
+  animation-play-state: running;
+  opacity: 0.7;
+  background: linear-gradient(oklch(0.72 0.09 250), oklch(0.5 0.08 260));
+}
+/* speaking: warm red, tall and lively */
+.ev-wave[data-state="speaking"] .ev-orb {
+  animation-duration: 620ms;
+  animation-play-state: running;
+  opacity: 1;
+  background: linear-gradient(oklch(0.72 0.16 32), var(--color-primary));
+  box-shadow: 0 0 20px -6px var(--color-primary);
+}
+/* error: flat, dim, blinking */
+.ev-wave[data-state="error"] .ev-orb {
+  animation: ev-bar-error 1.4s ease-in-out infinite;
+  animation-play-state: running;
+  background: linear-gradient(oklch(0.6 0.2 27), oklch(0.4 0.16 27));
 }
 @keyframes ev-bar {
   0%,
   100% {
     height: 10px;
-    opacity: 0.5;
   }
   50% {
-    height: 42px;
-    opacity: 1;
+    height: 46px;
   }
+}
+@keyframes ev-bar-error {
+  0%,
+  100% {
+    height: 8px;
+    opacity: 0.35;
+  }
+  50% {
+    height: 14px;
+    opacity: 0.9;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ev-mask-wrap,
+  .ev-mask-plate,
+  .ev-halo,
+  .ev-dust,
+  .ev-orb,
+  .ev-reply,
+  .ev-voice-enter,
+  .ev-mask-wrap[data-thinking="true"] .ev-mask-lensglow {
+    animation: none !important;
+  }
+  .ev-btn:hover,
+  .ev-btn:active {
+    transform: none;
+  }
+}
+
+/* halo tuned per state */
+.ev-halo[data-state="thinking"] {
+  background:
+    radial-gradient(circle, oklch(0.48 0.1 265 / 0.22) 0%, transparent 58%),
+    radial-gradient(circle, oklch(0.45 0.16 27 / 0.12) 30%, transparent 72%);
+  animation-duration: 4.5s;
+}
+.ev-halo[data-state="speaking"] {
+  background:
+    radial-gradient(circle, oklch(0.55 0.19 27 / 0.32) 0%, transparent 60%),
+    radial-gradient(circle, oklch(0.4 0.09 245 / 0.12) 28%, transparent 74%);
+  animation-duration: 2.6s;
+}
+.ev-halo[data-state="tool"] {
+  background:
+    radial-gradient(circle, oklch(0.6 0.13 175 / 0.22) 0%, transparent 58%),
+    radial-gradient(circle, oklch(0.45 0.16 27 / 0.12) 30%, transparent 72%);
+}
+.ev-halo[data-state="error"] {
+  background: radial-gradient(circle, oklch(0.5 0.2 25 / 0.26) 0%, transparent 60%);
+  animation-duration: 1.8s;
+}
+.ev-wave[data-state="tool"] .ev-orb {
+  animation-duration: 1.1s;
+  animation-play-state: running;
+  opacity: 0.9;
+  background: linear-gradient(oklch(0.78 0.13 175), oklch(0.5 0.1 190));
 }

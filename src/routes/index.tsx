@@ -213,10 +213,30 @@ function EvHome() {
     };
   }, []);
 
+  const voiceState = voiceHint?.includes("Não consegui")
+    ? "error"
+    : speaking
+      ? "speaking"
+      : busy
+        ? "thinking"
+        : listening
+          ? "listening"
+          : "idle";
+
+  const voiceStateLabel: Record<string, string> = {
+    idle: "aguardando",
+    listening: "ouvindo você",
+    thinking: "pensando",
+    speaking: "falando",
+    error: "sem sinal do microfone",
+  };
+
   return (
-    <main className="relative flex min-h-screen flex-col items-center overflow-hidden px-4 py-6">
-      <header className="flex w-full max-w-4xl items-center justify-between">
-        <span className="ev-wordmark text-lg font-semibold text-foreground">E.V.</span>
+    <main className="relative flex min-h-[100dvh] flex-col items-center overflow-hidden px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))]">
+      <div className="ev-dust" aria-hidden />
+
+      <header className="relative z-10 flex w-full max-w-4xl items-center justify-between">
+        <span className="ev-wordmark text-base font-semibold text-foreground sm:text-lg">E.V.</span>
         <div className="flex items-center gap-2">
           <button
             onClick={() => {
@@ -230,34 +250,44 @@ function EvHome() {
               });
             }}
             aria-label="Alternar voz da E.V."
-            className={`rounded-full border border-border p-2 transition-colors hover:bg-secondary ${voiceOut ? "text-accent" : "text-muted-foreground"}`}
+            className={`ev-btn rounded-full border p-2 ${voiceOut ? "border-accent/50 bg-accent/10 text-accent" : "border-border text-muted-foreground hover:bg-secondary"}`}
           >
             {voiceOut ? <Volume2 size={16} /> : <VolumeX size={16} />}
           </button>
           <button
             onClick={() => setShowHistory((s) => !s)}
             aria-label="Histórico"
-            className="rounded-full border border-border p-2 text-muted-foreground transition-colors hover:bg-secondary"
+            className="ev-btn rounded-full border border-border p-2 text-muted-foreground hover:bg-secondary"
           >
             <Terminal size={16} />
           </button>
         </div>
       </header>
 
-      <section className="flex flex-1 flex-col items-center justify-center gap-8 py-6">
+      <section className="ev-stage relative z-10 flex flex-1 flex-col items-center justify-center gap-6 py-4 sm:gap-9 sm:py-8">
         <h1 className="sr-only">E.V. — inteligência artificial companheira</h1>
+        <div className="ev-halo" data-listening={listening && !speaking} aria-hidden />
         <SpiderMask
           expression={expression}
           speaking={speaking}
           listening={listening}
           thinking={busy}
         />
-        <p className="max-w-xl text-balance text-center text-base leading-relaxed text-foreground/90 md:text-lg">
-          {busy ? <span className="text-muted-foreground">pensando...</span> : reply}
+        <p
+          key={busy ? "thinking" : reply}
+          className="ev-reply relative max-w-xl text-balance text-center text-[0.95rem] leading-relaxed text-foreground/90 sm:text-lg"
+        >
+          {busy ? (
+            <span className="font-[family-name:var(--font-terminal)] text-sm uppercase tracking-[0.35em] text-muted-foreground">
+              pensando
+            </span>
+          ) : (
+            reply
+          )}
         </p>
       </section>
 
-      <footer className="w-full max-w-2xl space-y-3 pb-2">
+      <footer className="relative z-10 w-full max-w-2xl space-y-3">
         {voiceHint && (
           <p className="text-center text-xs font-[family-name:var(--font-terminal)] text-accent">
             {voiceHint}
@@ -269,7 +299,7 @@ function EvHome() {
             unlockAudio();
             void submit(input);
           }}
-          className="terminal-panel flex items-center gap-2 rounded-full px-3 py-2"
+          className="terminal-panel ev-command flex items-center gap-1.5 px-2.5 py-2 sm:gap-2 sm:px-3"
         >
           <button
             type="button"
@@ -278,7 +308,7 @@ function EvHome() {
               listening ? stopRecognition() : startRecognition(false);
             }}
             aria-label="Palavra-chave Eevee"
-            className={`rounded-full p-2 transition-colors ${listening ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-secondary"}`}
+            className={`ev-btn rounded-full p-2 ${listening ? "bg-primary text-primary-foreground shadow-[0_0_22px_-6px_var(--color-primary)]" : "text-muted-foreground hover:bg-secondary"}`}
           >
             <Mic size={18} />
           </button>
@@ -286,13 +316,13 @@ function EvHome() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="fala comigo..."
-            className="flex-1 bg-transparent px-1 text-sm outline-none placeholder:text-muted-foreground"
+            className="min-w-0 flex-1 bg-transparent px-1 text-sm outline-none placeholder:text-muted-foreground/70"
           />
           <button
             type="button"
             onClick={openVoiceMode}
             aria-label="Conversa por voz"
-            className="rounded-full border border-accent/50 p-2 text-accent transition-colors hover:bg-accent/10"
+            className="ev-btn rounded-full border border-accent/50 p-2 text-accent hover:bg-accent/15"
           >
             <AudioLines size={18} />
           </button>
@@ -300,7 +330,7 @@ function EvHome() {
             type="submit"
             disabled={busy}
             aria-label="Enviar"
-            className="rounded-full bg-primary p-2 text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-40"
+            className="ev-btn rounded-full bg-primary p-2 text-primary-foreground hover:opacity-90 disabled:opacity-40"
           >
             <Send size={16} />
           </button>
@@ -308,41 +338,51 @@ function EvHome() {
       </footer>
 
       {voiceMode && (
-        <div className="fixed inset-0 z-30 flex flex-col items-center justify-center gap-10 bg-background/95 px-6 backdrop-blur-xl">
-          <SpiderMask
-            expression={expression}
-            speaking={speaking}
-            listening={listening && !speaking}
-            thinking={busy}
-          />
-          <div className="flex h-12 items-end gap-2">
-            {[0, 1, 2, 3, 4].map((i) => (
+        <div className="ev-voice-enter fixed inset-0 z-30 flex flex-col items-center justify-center gap-6 bg-background/95 px-6 py-8 backdrop-blur-2xl sm:gap-9">
+          <div className="ev-stage relative flex flex-col items-center">
+            <div className="ev-halo" data-listening={listening && !speaking} aria-hidden />
+            <SpiderMask
+              expression={expression}
+              speaking={speaking}
+              listening={listening && !speaking}
+              thinking={busy}
+            />
+          </div>
+
+          <div className="ev-wave" data-state={voiceState} aria-hidden>
+            {[0, 1, 2, 3, 4, 5, 6].map((i) => (
               <span
                 key={i}
                 className="ev-orb"
-                style={{
-                  animationDelay: `${i * 120}ms`,
-                  animationPlayState: speaking || (listening && !busy) ? "running" : "paused",
-                }}
+                style={{ animationDelay: `${i * 95}ms` }}
               />
             ))}
           </div>
-          <div className="max-w-lg space-y-2 text-center">
-            <p className="text-base leading-relaxed text-foreground/90">
+
+          <div className="max-w-lg space-y-3 text-center">
+            <p className="text-[0.7rem] font-[family-name:var(--font-terminal)] uppercase tracking-[0.4em] text-accent/80">
+              {voiceStateLabel[voiceState]}
+            </p>
+            <p
+              key={busy ? "thinking" : reply}
+              className="ev-reply text-base leading-relaxed text-foreground/90"
+            >
               {busy ? "pensando..." : reply}
             </p>
             <p className="text-xs text-muted-foreground">
               {speaking ? "falando..." : heard || "pode falar, tô te ouvindo."}
             </p>
           </div>
+
           <button
             onClick={closeVoiceMode}
-            className="rounded-full border border-border px-5 py-2 text-xs uppercase tracking-widest text-muted-foreground transition-colors hover:bg-secondary"
+            className="ev-btn rounded-full border border-border px-5 py-2 text-xs uppercase tracking-widest text-muted-foreground hover:bg-secondary"
           >
             encerrar conversa
           </button>
         </div>
       )}
+
 
       {showHistory && (
         <aside className="terminal-panel fixed right-0 top-0 z-40 h-full w-full max-w-sm animate-in slide-in-from-right overflow-y-auto p-4 text-xs">

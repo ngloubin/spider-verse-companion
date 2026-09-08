@@ -1,216 +1,125 @@
-import { useEffect, useId, useMemo, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+
+import maskBlink from "@/assets/ev-mask-blink.png";
+import maskNormal from "@/assets/ev-mask-normal.png";
+import maskSquint from "@/assets/ev-mask-squint.png";
+import maskWide from "@/assets/ev-mask-wide.png";
 
 export type Expression =
-  "olhos_normais" | "olhos_semicerrados" | "olhos_arregalados" | "olhos_piscando";
+  | "olhos_normais"
+  | "olhos_semicerrados"
+  | "olhos_arregalados"
+  | "olhos_piscando";
 
-type Shape = Exclude<Expression, "olhos_piscando">;
+const LAYERS: { key: Expression; src: string }[] = [
+  { key: "olhos_normais", src: maskNormal },
+  { key: "olhos_semicerrados", src: maskSquint },
+  { key: "olhos_arregalados", src: maskWide },
+  { key: "olhos_piscando", src: maskBlink },
+];
 
-const LENS: Record<Shape, string> = {
-  olhos_normais:
-    "M270 341 C249 302 210 264 156 244 C116 229 86 239 83 271 C80 306 122 341 178 352 C225 361 283 362 270 341 Z",
-  olhos_semicerrados:
-    "M270 345 C249 324 213 297 161 282 C124 271 97 281 96 303 C95 329 132 350 184 358 C230 364 283 365 270 345 Z",
-  olhos_arregalados:
-    "M274 338 C251 286 205 236 143 210 C99 192 66 209 61 250 C55 297 111 349 177 362 C235 373 288 369 274 338 Z",
-};
-
-const ORDER: Shape[] = ["olhos_normais", "olhos_semicerrados", "olhos_arregalados"];
-const HEAD =
-  "M300 24 C187 24 104 95 78 207 C54 313 82 423 157 517 C207 580 258 610 300 610 C342 610 393 580 443 517 C518 423 546 313 522 207 C496 95 413 24 300 24 Z";
-
+/**
+ * Photographic mask made of four cross-fading plates (one per expression)
+ * plus light layers that react to what E.V. is doing.
+ */
 export function SpiderMask({
   expression = "olhos_normais",
   speaking = false,
   listening = false,
   thinking = false,
+  intensity = 0,
 }: {
   expression?: Expression;
   speaking?: boolean;
   listening?: boolean;
   thinking?: boolean;
+  /** 0..1 — how energetic the current voice/processing activity is. */
+  intensity?: number;
 }) {
   const [blink, setBlink] = useState(false);
-  const shape: Shape = expression === "olhos_piscando" ? "olhos_normais" : expression;
-  const rawId = useId();
-  const ids = useMemo(() => {
-    const id = rawId.replace(/:/g, "");
-    return {
-      fill: `${id}-mask-fill`,
-      lens: `${id}-lens-fill`,
-      sheen: `${id}-sheen`,
-      clip: `${id}-head-clip`,
-      texture: `${id}-texture`,
-      glow: `${id}-lens-glow`,
+  const wrapRef = useRef<HTMLDivElement>(null);
+
+  // natural, non-periodic blinking
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout>;
+    const schedule = () => {
+      timer = setTimeout(
+        () => {
+          setBlink(true);
+          setTimeout(() => setBlink(false), 130);
+          schedule();
+        },
+        3800 + Math.random() * 6500,
+      );
     };
-  }, [rawId]);
-
-  useEffect(() => {
-    if (expression !== "olhos_piscando") return;
-    setBlink(true);
-    const timeout = window.setTimeout(() => setBlink(false), 190);
-    return () => window.clearTimeout(timeout);
-  }, [expression]);
-
-  useEffect(() => {
-    const interval = window.setInterval(
-      () => {
-        setBlink(true);
-        window.setTimeout(() => setBlink(false), 150);
-      },
-      7000 + Math.random() * 6000,
-    );
-    return () => window.clearInterval(interval);
+    schedule();
+    return () => clearTimeout(timer);
   }, []);
 
-  const spokes = useMemo(
-    () =>
-      Array.from({ length: 22 }).map((_, i) => {
-        const angle = -Math.PI / 2 + (Math.PI * 2 * i) / 22;
-        return {
-          x1: Math.round((300 + Math.cos(angle) * 8) * 100) / 100,
-          y1: Math.round((300 + Math.sin(angle) * 8) * 100) / 100,
-          x2: Math.round((300 + Math.cos(angle) * 470) * 100) / 100,
-          y2: Math.round((300 + Math.sin(angle) * 505) * 100) / 100,
-        };
-      }),
-    [],
-  );
+  // gentle parallax — the mask keeps facing the person at the desk
+  useEffect(() => {
+    const el = wrapRef.current;
+    if (!el) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    let raf = 0;
+    let tx = 0;
+    let ty = 0;
+    let cx = 0;
+    let cy = 0;
+
+    const onMove = (e: PointerEvent) => {
+      tx = (e.clientX / window.innerWidth - 0.5) * 2;
+      ty = (e.clientY / window.innerHeight - 0.5) * 2;
+    };
+
+    const loop = () => {
+      cx += (tx - cx) * 0.045;
+      cy += (ty - cy) * 0.045;
+      el.style.setProperty("--px", cx.toFixed(4));
+      el.style.setProperty("--py", cy.toFixed(4));
+      raf = requestAnimationFrame(loop);
+    };
+
+    window.addEventListener("pointermove", onMove, { passive: true });
+    raf = requestAnimationFrame(loop);
+    return () => {
+      window.removeEventListener("pointermove", onMove);
+      cancelAnimationFrame(raf);
+    };
+  }, []);
+
+  const active: Expression = blink ? "olhos_piscando" : expression;
 
   return (
     <div
+      ref={wrapRef}
       className="ev-mask-wrap"
       data-speaking={speaking}
       data-listening={listening}
       data-thinking={thinking}
+      style={{ ["--energy" as string]: intensity.toFixed(3) }}
     >
-      <svg viewBox="0 0 600 650" className="ev-mask" role="img" aria-label="Máscara da E.V.">
-        <defs>
-          <radialGradient id={ids.fill} cx="43%" cy="18%" r="86%">
-            <stop offset="0%" stopColor="var(--mask-red-hi)" />
-            <stop offset="52%" stopColor="var(--mask-red-mid)" />
-            <stop offset="100%" stopColor="var(--mask-red-lo)" />
-          </radialGradient>
-          <linearGradient id={ids.lens} x1="0.12" y1="0" x2="0.82" y2="1">
-            <stop offset="0%" stopColor="var(--lens-hi)" />
-            <stop offset="50%" stopColor="var(--lens-mid)" />
-            <stop offset="100%" stopColor="var(--lens-lo)" />
-          </linearGradient>
-          <linearGradient id={ids.sheen} x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor="white" stopOpacity="0.9" />
-            <stop offset="38%" stopColor="white" stopOpacity="0.18" />
-            <stop offset="100%" stopColor="white" stopOpacity="0" />
-          </linearGradient>
-          <filter id={ids.glow} x="-70%" y="-70%" width="240%" height="240%">
-            <feGaussianBlur stdDeviation="8" result="blur" />
-            <feMerge>
-              <feMergeNode in="blur" />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
-          </filter>
-          <filter id={ids.texture} x="-10%" y="-10%" width="120%" height="120%">
-            <feTurbulence
-              type="fractalNoise"
-              baseFrequency="0.045 0.18"
-              numOctaves="2"
-              seed="11"
-              result="noise"
-            />
-            <feColorMatrix in="noise" type="saturate" values="0" result="mono" />
-            <feComponentTransfer in="mono">
-              <feFuncA type="table" tableValues="0 0.07" />
-            </feComponentTransfer>
-            <feBlend in="SourceGraphic" in2="mono" mode="soft-light" />
-          </filter>
-          <clipPath id={ids.clip}>
-            <path d={HEAD} />
-          </clipPath>
-        </defs>
-
-        <path d={HEAD} fill={`url(#${ids.fill})`} />
-        <g clipPath={`url(#${ids.clip})`}>
-          <ellipse cx="300" cy="90" rx="232" ry="160" fill="white" opacity="0.08" />
-          <ellipse cx="300" cy="650" rx="280" ry="230" fill="black" opacity="0.38" />
-          <ellipse cx="105" cy="360" rx="140" ry="300" fill="black" opacity="0.23" />
-          <ellipse cx="495" cy="360" rx="140" ry="300" fill="black" opacity="0.23" />
-          <path
-            d="M112 108 Q300 26 488 108 L470 150 Q300 89 130 150 Z"
-            fill="white"
-            opacity="0.035"
+      <div className="ev-mask-contact" aria-hidden />
+      <div className="ev-mask-plate" role="img" aria-label="Máscara da E.V.">
+        {LAYERS.map((l) => (
+          <img
+            key={l.key}
+            src={l.src}
+            alt=""
+            width={1024}
+            height={1280}
+            draggable={false}
+            className="ev-mask-layer"
+            data-active={l.key === active}
           />
-        </g>
-
-        <g clipPath={`url(#${ids.clip})`} className="ev-web">
-          <g stroke="var(--web-line)" strokeWidth="2.35" fill="none" strokeLinecap="round">
-            {spokes.map((s, i) => (
-              <line key={i} x1={s.x1} y1={s.y1} x2={s.x2} y2={s.y2} />
-            ))}
-          </g>
-          <g stroke="var(--web-line)" strokeWidth="1.9" fill="none">
-            {[44, 88, 138, 198, 270, 350, 438].map((r) => (
-              <ellipse key={r} cx="300" cy="294" rx={r} ry={r * 1.09} />
-            ))}
-          </g>
-        </g>
-
-        <g transform="translate(0,-5)">
-          <g className="ev-lens-rim">
-            {ORDER.map((key) => (
-              <path
-                key={`left-rim-${key}`}
-                d={LENS[key]}
-                fill="var(--lens-edge)"
-                stroke="var(--lens-edge)"
-                strokeWidth="24"
-                strokeLinejoin="round"
-                className="ev-lens-path"
-                data-active={key === shape}
-              />
-            ))}
-            <g transform="translate(600,0) scale(-1,1)">
-              {ORDER.map((key) => (
-                <path
-                  key={`right-rim-${key}`}
-                  d={LENS[key]}
-                  fill="var(--lens-edge)"
-                  stroke="var(--lens-edge)"
-                  strokeWidth="24"
-                  strokeLinejoin="round"
-                  className="ev-lens-path"
-                  data-active={key === shape}
-                />
-              ))}
-            </g>
-          </g>
-          <g className="ev-lenses" data-blink={blink} filter={`url(#${ids.glow})`}>
-            <g>
-              {ORDER.map((key) => (
-                <path
-                  key={`left-${key}`}
-                  d={LENS[key]}
-                  fill={`url(#${ids.lens})`}
-                  className="ev-lens-path"
-                  data-active={key === shape}
-                />
-              ))}
-            </g>
-            <g transform="translate(600,0) scale(-1,1)">
-              {ORDER.map((key) => (
-                <path
-                  key={`right-${key}`}
-                  d={LENS[key]}
-                  fill={`url(#${ids.lens})`}
-                  className="ev-lens-path"
-                  data-active={key === shape}
-                />
-              ))}
-            </g>
-            <g opacity="0.42">
-              <path d="M106 248 L236 240 L198 288 L96 294 Z" fill={`url(#${ids.sheen})`} />
-              <path d="M364 240 L494 248 L504 294 L402 288 Z" fill={`url(#${ids.sheen})`} />
-            </g>
-          </g>
-        </g>
-      </svg>
+        ))}
+        <div className="ev-mask-lightwrap" aria-hidden>
+          <div className="ev-mask-key" />
+          <div className="ev-mask-rim" />
+          <div className="ev-mask-lensglow" />
+        </div>
+      </div>
     </div>
   );
 }
