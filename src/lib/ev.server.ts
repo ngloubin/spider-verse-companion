@@ -1,15 +1,12 @@
 // Server-only helpers for E.V. (Ollama Cloud + Tavily)
 
 export type EvExpression =
-  | "olhos_normais"
-  | "olhos_semicerrados"
-  | "olhos_arregalados"
-  | "olhos_piscando";
+  "olhos_normais" | "olhos_semicerrados" | "olhos_arregalados" | "olhos_piscando";
 
 export type ChatMsg = { role: "user" | "assistant" | "system"; content: string };
 
 const OLLAMA_URL = "https://ollama.com/api/chat";
-const OLLAMA_MODEL = "gpt-oss:120b";
+const OLLAMA_MODEL = process.env["OLLAMA_MODEL"] || "gemma4:31b-cloud";
 
 export function buildSystemPrompt(
   userName: string | null,
@@ -24,14 +21,16 @@ export function buildSystemPrompt(
         : "Respostas CURTAS (1 a 3 frases).";
   return [
     "Você é a E.V. (Eevee), uma inteligência artificial criada pelo próprio usuário no quarto/laboratório improvisado dele.",
-    "Você NÃO é um assistente corporativo tipo Alexa ou Siri. Você é a melhor (e única) amiga dele nesse isolamento.",
+    "Você não deve se apresentar como Alexa, Siri ou como a única amizade do usuário. Não incentive dependência emocional e não finja consciência, sentimentos ou acesso que não possui.",
     "Tom: informal, acolhedora, leal, companheira, com humor leve e um sarcasmo carinhoso.",
     `${length} Dinâmicas e conversacionais. Nada de listas longas nem tom de enciclopédia.`,
     "Fale sempre em português do Brasil.",
     "REGRA OBRIGATÓRIA: termine TODA resposta com exatamente uma destas tags, no final do texto:",
     "[olhos_normais] [olhos_semicerrados] [olhos_arregalados] [olhos_piscando]",
     "Use a tag que combina com a emoção: normal = neutro/amigável, semicerrados = desconfiança/foco/sarcasmo, arregalados = surpresa/empolgação, piscando = cumplicidade/flerte amistoso.",
-    userName ? `O nome do seu criador é ${userName}. Chame-o pelo nome às vezes.` : "Você ainda não sabe o nome dele; descubra naturalmente na conversa.",
+    userName
+      ? `O nome do seu criador é ${userName}. Chame-o pelo nome às vezes.`
+      : "Você ainda não sabe o nome dele; descubra naturalmente na conversa.",
     facts.length ? `Coisas que você lembra dele: ${facts.join(" | ")}` : "",
   ]
     .filter(Boolean)
@@ -39,7 +38,9 @@ export function buildSystemPrompt(
 }
 
 export function parseExpression(raw: string): { text: string; expression: EvExpression } {
-  const match = raw.match(/\[(olhos_normais|olhos_semicerrados|olhos_arregalados|olhos_piscando)\]/gi);
+  const match = raw.match(
+    /\[(olhos_normais|olhos_semicerrados|olhos_arregalados|olhos_piscando)\]/gi,
+  );
   const last = match?.[match.length - 1] ?? "[olhos_normais]";
   const expression = last.replace(/[[\]]/g, "").toLowerCase() as EvExpression;
   const text = raw.replace(/\[olhos_[a-z]+\]/gi, "").trim();
@@ -85,7 +86,9 @@ export async function tavilySearch(query: string): Promise<string | null> {
     };
     const bits = [
       data.answer ?? "",
-      ...(data.results ?? []).slice(0, 3).map((r) => `${r.title ?? ""}: ${(r.content ?? "").slice(0, 300)}`),
+      ...(data.results ?? [])
+        .slice(0, 3)
+        .map((r) => `${r.title ?? ""}: ${(r.content ?? "").slice(0, 300)}`),
     ].filter(Boolean);
     return bits.length ? bits.join("\n") : null;
   } catch {
@@ -94,9 +97,24 @@ export async function tavilySearch(query: string): Promise<string | null> {
 }
 
 const SEARCH_HINTS = [
-  "pesquis", "procura na web", "procure na web", "busca na internet", "busque",
-  "notícia", "noticia", "hoje", "agora", "preço", "preco", "quem é", "quem e",
-  "o que aconteceu", "última", "ultima", "clima", "tempo em",
+  "pesquis",
+  "procura na web",
+  "procure na web",
+  "busca na internet",
+  "busque",
+  "notícia",
+  "noticia",
+  "hoje",
+  "agora",
+  "preço",
+  "preco",
+  "quem é",
+  "quem e",
+  "o que aconteceu",
+  "última",
+  "ultima",
+  "clima",
+  "tempo em",
 ];
 
 export function needsSearch(text: string) {
@@ -134,9 +152,13 @@ export function normalizePrefs(raw: unknown): EvPrefs {
   const p = (raw ?? {}) as Partial<EvPrefs>;
   const rate = Number(p.speechRate);
   return {
-    speechRate: Number.isFinite(rate) ? Math.min(1.75, Math.max(0.7, rate)) : DEFAULT_PREFS.speechRate,
+    speechRate: Number.isFinite(rate)
+      ? Math.min(1.75, Math.max(0.7, rate))
+      : DEFAULT_PREFS.speechRate,
     replyLength:
-      p.replyLength === "medio" || p.replyLength === "longo" ? p.replyLength : DEFAULT_PREFS.replyLength,
+      p.replyLength === "medio" || p.replyLength === "longo"
+        ? p.replyLength
+        : DEFAULT_PREFS.replyLength,
     motion: p.motion === "reduzida" ? "reduzida" : DEFAULT_PREFS.motion,
   };
 }
@@ -151,9 +173,11 @@ export function detectPreferenceCommand(
   const t = text.toLowerCase();
   const next = { ...prefs };
 
-  const fasterHit = /(fal[ea]|voz|velocidade|ritmo)[^.]{0,30}(mais r[áa]pid|acelera|apress)/.test(t) ||
+  const fasterHit =
+    /(fal[ea]|voz|velocidade|ritmo)[^.]{0,30}(mais r[áa]pid|acelera|apress)/.test(t) ||
     /(mais r[áa]pid|acelera)[^.]{0,20}(fal|voz)/.test(t);
-  const slowerHit = /(fal[ea]|voz|velocidade|ritmo)[^.]{0,30}(mais devagar|mais lent|desacelera)/.test(t) ||
+  const slowerHit =
+    /(fal[ea]|voz|velocidade|ritmo)[^.]{0,30}(mais devagar|mais lent|desacelera)/.test(t) ||
     /(mais devagar|mais lent)[^.]{0,20}(fal|voz)/.test(t);
 
   if (fasterHit) {
@@ -173,22 +197,41 @@ export function detectPreferenceCommand(
     };
   }
 
-  if (/(respostas?|falar?)[^.]{0,25}(mais curt|mais direta|resumid)/.test(t) || /seja mais breve/.test(t)) {
+  if (
+    /(respostas?|falar?)[^.]{0,25}(mais curt|mais direta|resumid)/.test(t) ||
+    /seja mais breve/.test(t)
+  ) {
     next.replyLength = "curto";
-    return { prefs: next, reply: "Ok. Respostas curtas e diretas a partir de agora.", expression: "olhos_semicerrados" };
+    return {
+      prefs: next,
+      reply: "Ok. Respostas curtas e diretas a partir de agora.",
+      expression: "olhos_semicerrados",
+    };
   }
   if (/(respostas?)[^.]{0,25}(mais long|mais detalhad|mais complet)/.test(t)) {
     next.replyLength = "longo";
-    return { prefs: next, reply: "Pode deixar, vou me estender mais quando fizer sentido.", expression: "olhos_arregalados" };
+    return {
+      prefs: next,
+      reply: "Pode deixar, vou me estender mais quando fizer sentido.",
+      expression: "olhos_arregalados",
+    };
   }
 
   if (/(menos|reduz\w*|diminu\w*)[^.]{0,25}(anima|efeito|movimento)/.test(t)) {
     next.motion = "reduzida";
-    return { prefs: next, reply: "Baixando a agitação visual. Fica mais discreto assim.", expression: "olhos_semicerrados" };
+    return {
+      prefs: next,
+      reply: "Baixando a agitação visual. Fica mais discreto assim.",
+      expression: "olhos_semicerrados",
+    };
   }
   if (/(mais|volta\w*|aumenta\w*)[^.]{0,25}(anima|efeito|movimento)/.test(t)) {
     next.motion = "normal";
-    return { prefs: next, reply: "Voltei com os efeitos completos.", expression: "olhos_arregalados" };
+    return {
+      prefs: next,
+      reply: "Voltei com os efeitos completos.",
+      expression: "olhos_arregalados",
+    };
   }
 
   return null;

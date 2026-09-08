@@ -44,7 +44,7 @@ Configure o modelo de linguagem embutido na aplicação com as seguintes regras 
 
 ### 4. CONFIGURAÇÃO LOCAL
 
-Copie `.env.example` para `.env.local` e preencha `OLLAMA_API_KEY` localmente. A aplicação usa `gemma4:31b-cloud` por padrão (ou o valor de `OLLAMA_MODEL`) e a credencial é lida somente no servidor; nenhuma chave `OLLAMA_*` deve usar o prefixo `VITE_` ou ser enviada ao navegador. Se uma chave já tiver sido versionada anteriormente, ela deve ser rotacionada no painel do provedor.
+Copie `.env.example` para `.env.local` e preencha `OLLAMA_API_KEY`, `TAVILY_API_KEY` e, se necessário, `FISH_AUDIO_API_KEY` somente no ambiente local/deploy. A aplicação usa `gemma4:31b-cloud` por padrão (ou o valor de `OLLAMA_MODEL`) e a credencial da Tavily é usada apenas no servidor quando a mensagem pedir pesquisa atual, notícias, clima, preço ou informação semelhante. Nenhuma chave deve usar o prefixo `VITE_` ou ser enviada ao navegador. Se uma chave já tiver sido versionada anteriormente, ela deve ser rotacionada no painel do provedor.
 
 ### 5. RECURSOS ADICIONAIS
 
