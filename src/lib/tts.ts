@@ -1,5 +1,14 @@
 let currentAudio: HTMLAudioElement | null = null;
 let currentAbort: AbortController | null = null;
+let speechRate = 1.22;
+
+export function setSpeechRate(rate: number) {
+  speechRate = Math.min(1.75, Math.max(0.7, rate));
+}
+
+export function getSpeechRate() {
+  return speechRate;
+}
 
 /** Prime the browser audio engine so later plays inside the same gesture work. */
 export function unlockAudio() {
@@ -31,7 +40,7 @@ export async function speakStream(text: string, onDone?: () => void): Promise<vo
     const res = await fetch("/api/tts", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text }),
+      body: JSON.stringify({ text, rate: speechRate }),
       signal: controller.signal,
     });
 
@@ -42,6 +51,7 @@ export async function speakStream(text: string, onDone?: () => void): Promise<vo
     const blob = await res.blob();
     const url = URL.createObjectURL(blob);
     const audio = new Audio(url);
+    audio.playbackRate = 1;
     currentAudio = audio;
 
     audio.onended = () => {
@@ -62,19 +72,43 @@ export async function speakStream(text: string, onDone?: () => void): Promise<vo
   }
 }
 
+/**
+ * Native voice fallback. Long answers are split into clauses and queued back
+ * to back so the delivery stays continuous instead of word-by-word.
+ */
 function fallbackSpeak(text: string, onDone?: () => void) {
   if (typeof window === "undefined" || !window.speechSynthesis) {
     onDone?.();
     return;
   }
-  const u = new SpeechSynthesisUtterance(text);
-  u.lang = "pt-BR";
-  u.rate = 1.05;
-  u.pitch = 1.15;
-  const pt = window.speechSynthesis.getVoices().find((v) => v.lang?.toLowerCase().startsWith("pt"));
-  if (pt) u.voice = pt;
-  u.onend = () => onDone?.();
-  u.onerror = () => onDone?.();
-  window.speechSynthesis.cancel();
-  window.speechSynthesis.speak(u);
+
+  const synth = window.speechSynthesis;
+  synth.cancel();
+
+  const pt = synth.getVoices().find((v) => v.lang?.toLowerCase().startsWith("pt"));
+  const chunks = text
+    .replace(/\s+/g, " ")
+    .split(/(?<=[.!?…])\s+/)
+    .flatMap((s) => (s.length > 160 ? s.split(/(?<=,)\s+/) : [s]))
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+  if (chunks.length === 0) {
+    onDone?.();
+    return;
+  }
+
+  chunks.forEach((chunk, i) => {
+    const u = new SpeechSynthesisUtterance(chunk);
+    u.lang = "pt-BR";
+    // small natural variation so the rhythm doesn't sound metronomic
+    u.rate = speechRate * (1 + (i % 3 === 1 ? 0.03 : i % 3 === 2 ? -0.02 : 0));
+    u.pitch = 1.1 + (i % 2 === 0 ? 0.04 : -0.03);
+    if (pt) u.voice = pt;
+    if (i === chunks.length - 1) {
+      u.onend = () => onDone?.();
+      u.onerror = () => onDone?.();
+    }
+    synth.speak(u);
+  });
 }

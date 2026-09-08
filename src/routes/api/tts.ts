@@ -8,7 +8,7 @@ export const Route = createFileRoute("/api/tts")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const body = (await request.json().catch(() => null)) as { text?: string } | null;
+        const body = (await request.json().catch(() => null)) as { text?: string; rate?: number } | null;
         const text = body?.text?.trim();
         if (!text) return new Response("missing text", { status: 400 });
 
@@ -30,6 +30,10 @@ export const Route = createFileRoute("/api/tts")({
             format: "mp3",
             mp3_bitrate: 128,
             latency: "balanced",
+            prosody: {
+              speed: Math.min(1.6, Math.max(0.7, Number(body?.rate) || 1.22)),
+              volume: 0,
+            },
             normalize: true,
           }),
         });
