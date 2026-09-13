@@ -156,7 +156,7 @@ export const evSend = createServerFn({ method: "POST" })
       await persistTurn(reply, updated?.length ? "olhos_arregalados" : "olhos_semicerrados");
       return {
         text: reply,
-        expression: (updated?.length ? "olhos_arregalados" : "olhos_semicerrados") as const,
+        expression: updated?.length ? "olhos_arregalados" : "olhos_semicerrados",
         userName: name ?? null,
         searched: false,
         prefs,
